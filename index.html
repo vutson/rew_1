@@ -1,0 +1,3284 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>Доповіді МВГ/ВГ</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+  <script src="https://unpkg.com/vue-the-mask@0.11.1/dist/vue-the-mask.js"></script>
+
+  <style>
+    /* =====================================================================
+       ПАНЕЛЬ ВКЛАДОК — компактна, лише перемикання між трьома формами.
+       Кнопка теми тепер внизу, поруч з "Очистити форму" в кожній вкладці.
+       ===================================================================== */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+
+    .tab-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.3rem;
+      padding: 0.35rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--field-border);
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: 1px solid var(--field-border);
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.25rem;
+      font-weight: 600;
+      font-size: 0.72rem;
+      line-height: 1.1;
+      cursor: pointer;
+      background: var(--bg-section);
+      color: var(--text-muted);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .tab-btn:active { transform: translateY(1px); }
+
+    .tab-btn-active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* Мінімальний розмір шрифту 16px в полях — запобігає авто-зуму на iPhone при фокусі */
+    .tab-panel input, .tab-panel select, .tab-panel textarea {
+      font-size: 16px !important;
+    }
+
+    /* =====================================================================
+       ⚠️ РЕДАГУВАННЯ ТУТ — 4 кольорові теми.
+       Щоб змінити відтінок, просто зміни значення кольору (hex/rgba) —
+       решта коду цього не потребує торкатись.
+       ===================================================================== */
+    :root {
+      /* Значення за замовчуванням (на випадок якщо JS ще не встиг спрацювати) */
+      --bg-page: #eef1f5;
+      --bg-card: #ffffff;
+      --bg-section: #f3f5f8;
+      --bg-field: #ffffff;
+      --field-border: #cbd5e1;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --line: #94a3b8;
+      --accent: #0891b2;
+      --accent-dark: #0e7490;
+      --accent-glow: rgba(8, 145, 178, 0.22);
+      --warn-text: #b45309;
+    }
+
+    /* --- Тема 1: Ніч --- */
+    body.palette-night {
+      --bg-page: #14131c;
+      --bg-card: #201f2b;
+      --bg-section: #2a293a;
+      --bg-field: #35334a;
+      --field-border: #4a4768;
+      --text-main: #f3f4f6;
+      --text-muted: #a3a1b8;
+      --line: #6c6a8f;
+      --accent: #7c6fd1;
+      --accent-dark: #6357b8;
+      --accent-glow: rgba(124, 111, 209, 0.35);
+      --warn-text: #ffd54a;
+    }
+
+    /* --- Тема 2: Сонячний день --- */
+    body.palette-sun {
+      --bg-page-gradient: radial-gradient(circle at 20% 0%, rgba(255, 215, 128, 0.75), transparent 34%), linear-gradient(160deg, #0d2dff 0%, #fff7df 44%, #e4f753 100%);
+      --bg-card: rgba(255, 251, 235, 0.96);
+      --bg-section: rgba(255, 248, 220, 0.65);
+      --bg-field: #fffaf0;
+      --field-border: #9a6b2f;
+      --text-main: #172033;
+      --text-muted: #4b5563;
+      --line: #c0842d;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --accent-glow: rgba(15, 118, 110, 0.22);
+      --warn-text: #92400e;
+    }
+
+    /* --- Тема 3: Піксель (український цифровий камуфляж, за мотивами
+       зразка користувача — власний згенерований візерунок, не копія
+       завантаженого зображення). Фон сторінки — піксельний камуфляж,
+       картка/поля лишаються суцільного кольору для читабельності. */
+    body.palette-pixel {
+      --bg-page-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAF9klEQVR4nIVZQWrrSBAtCx/AJ7AdsEEagfinMLEXyi7ga+TzhxwhqyxmNycIZJcspJBjCIQNNsT2CXyEWTzr5am6nWk+H0murq5+XfWqqjNYlb+O+/NqWZhZkaVm1my2ZtbuTvl8bN2o6gYy7e5kZvl8zAfrD06EAAblsRZlsOLL+yfFhvl8rEpvplNIcEKz2WKaLqDLm9m6XDw9v05mI2ir6mYyG3ENNQuv/Ajlx/0Z8u3uNFiVv8K1ARK+hMu7TeOBqITg6Wu7O63LRbPZXpNJFLoiS5+eX5vNtqobmo+fdDhQaSUeeDSYWNXNulxQPp+PYU0+Hx/353Z3wj/qHPz5XVJ1uDaBxSkAW2dN1GOILiEvspS+ooAp3vl87A2ClqpuHh/urTu7cO0QodC7Q7Wqp92d6Do6N+Ec3dO///wN7yZmCsBxf+YU3StkHMzXrMnn49WycD5U1U2iKtRjvg4H+BO+q98g/pvNlr6JAQGcC/XQmujedLS70+PD/eXI3JFbd+p4wIbCNUIA/neQJsgsipnxyLg8UdFnRrID/xoAGm4YCFsMBBqFj/uz/prghepWy6KqG0xYLQt1lJf3T/UPxxdYVQNYB05Zx7pcYOnJbKSRO4SfEyFIEEmFBDZpuCrh6i51uJA0oSvH5pBM6BxqE5Ck5+MjXNtZQ89bLQtGDacocZMA1Yjj/syF1uWiyNIhTWk2WyUuSnMf0aSrEUoBHpBKrssFlDCXa15j4rr40NPzq5O4NkBCzhpuBtqiYEAGWCrMEOb5fIe9dRGuyxNwZ6hjh2uRj5/0iFHG6HKajoosTazPJYgRHJbmbQJT1Y0jJC4ZRjtZA690ZKAFOJWvX94/EwS5Bj+maRllZpPZCFGtAewiy9Uh7tcwDcMUt41B/tc0JAlWWNGIDbM9kMceVJ6O7DTo0LjJ5+PEaQFIqDSU+jjBOp8FBowD7AqzlJ/IC0WWhokP1sAfsLGEW4zmPCViKqKtDloX8Nf2g+V1OTr1d8XIrSN68/mYMCrm0DKZjdS9qBrMph8Rz04JnQGr4IFKEs7HD/qbBYmd1mvyVyQ0WtWyaKHCPWg1kSjNmzCbY52wPsHz3fLW+unFZHCHzOqOV+lk3MyQNAUP1eAKayPFgGTx+HCvHYsbDMwokJp58PDdBikqP1T77ku0VfqBLNDYkORQvGsbmEQnk4KjdmhIunyMrs/E07E3PSmeCZ5f3j9BVz2EtE5wvQ4mo+b/OhxY0dI4qsMhutxpsaEtkZNJTBzZhDcJA+D5OhyoSzPAcX/WqpdFZh5rJjWZkEId/w1w2aCsE1rddv2vYoaK5fHhPnTnm+n0rf5QU47787VGT9NUi95ejYiyBYfGGg9O/fpueft1ONxMpzhcC85OhVmcsDKZzEZDt7A6BxF27TPChBsgs1l3sgqPHopaQ+UUwCq9vswBgGc9UIe8i3mGNL/Ax7XwCKs8B9glddDnQZ1hCwEHXC0LN1+9p9lsaY1mPdXj8lJIbIkKaV0c+jXCh3Y0m+3d8jZ6gRSWjj+YpVBVddPzIVyEhfUaN6SsU2TpW/2hFyZaRbi1HdWpgMuDFx/SfGsSRHSCEDOYQiYMf7K+02hV6VofnXsp8iEBitPqRxsodxBst1FrO/ydF2IJanPubJ0/XZz6ZjqFhO5VqZbrRROntg3UjmDUL0WW0kpAG5plZkmRpaAyTiAS2DqNCD0jNLeqG0SGKzKvWan2XQzC+1v9oVUBtITOEbVJqQ9ouUpcE5nmeYZtkaWwtcjSxIGpazMNhahojcE9XMvttMCBYUJF/D9BHY5LmrDxQw3JipslgOvaSAfOUdgH6wWLttLhxcvgz+/SlUEa5A4VPUQX0mGFqsxEWmHOYZXoRvIDh6o7AypGOJnCYryMwQyowkX/jxvhot8lLHbDJtD5R9td5Gp3zFrM5PhCStRo4o2HmpJLh39JrrjuCAHEyPvdMdmBmRhWRm8XwAXabLlmHg/rcgH5Id6ZH0gV0bMjHTCx4LXp/iqiRZn1D52VIQOCjqzXZf8B8WW/s20qN3QAAAAASUVORK5CYII=");
+      --bg-page: #4a4e30;
+      --bg-card: #3a3928;
+      --bg-section: #48462f;
+      --bg-field: #59573a;
+      --field-border: #7d7a52;
+      --text-main: #f2ead2;
+      --text-muted: #b7b18c;
+      --line: #8a8560;
+      --accent: #7c8a4a;
+      --accent-dark: #626e39;
+      --accent-glow: rgba(124, 138, 74, 0.32);
+      --warn-text: #e8c468;
+    }
+
+    /* --- Тема 4: Нейтральна --- */
+    body.palette-neutral {
+      --bg-page: #eef1f5;
+      --bg-card: #ffffff;
+      --bg-section: #f3f5f8;
+      --bg-field: #ffffff;
+      --field-border: #cbd5e1;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --line: #94a3b8;
+      --accent: #0891b2;
+      --accent-dark: #0e7490;
+      --accent-glow: rgba(8, 145, 178, 0.22);
+      --warn-text: #b45309;
+    }
+
+    body {
+      background: var(--bg-page-image, var(--bg-page-gradient, var(--bg-page)));
+      background-attachment: fixed;
+      color: var(--text-main);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    /* Тільки для теми "Піксель" фон тайлиться невеликими квадратами;
+       у решти тем фон — суцільний колір або градієнт на весь екран. */
+    body.palette-pixel {
+      background-size: 240px 240px;
+      background-repeat: repeat;
+      background-attachment: fixed;
+    }
+
+    /* =====================================================================
+       СПІЛЬНІ КЛАСИ ПОЛІВ — використовуються у вкладці "Застосування" та
+       частково в інших. Колір завжди бере значення з активної теми.
+       ===================================================================== */
+    .f-field {
+      background-color: var(--bg-field);
+      border: 1px solid var(--field-border);
+    }
+    .f-field-filled { color: var(--text-main); }
+    .f-field-empty { color: var(--text-muted); }
+    .f-text-muted { color: var(--text-muted); }
+    .f-border { border-color: var(--field-border) !important; }
+    .f-card {
+      background-color: var(--bg-card);
+      border-color: var(--field-border);
+      color: var(--text-main);
+    }
+    .f-section {
+      background-color: var(--bg-section);
+      border-color: var(--field-border);
+    }
+
+    /* =====================================================================
+       ЄДИНИЙ БЛОК КНОПОК "СКОПІЮВАТИ" / "ОЧИСТИТИ ФОРМУ" — однаковий
+       вигляд і розташування у всіх трьох вкладках.
+       ===================================================================== */
+    .f-btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .f-btn-copy {
+      width: 100%;
+      background-color: #15803d;
+      color: #ffffff;
+      border: 2px solid transparent;
+      border-radius: 0.75rem;
+      padding: 0.9rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+    }
+    .f-btn-copy:hover { background-color: #166534; }
+    .f-btn-secondary-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .f-btn-clear {
+      flex: 1;
+      background-color: var(--bg-field);
+      color: var(--text-main);
+      border: 2px solid var(--field-border);
+      border-radius: 0.75rem;
+      padding: 0.65rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .f-btn-clear:hover { filter: brightness(0.94); }
+    .f-btn-theme {
+      flex: 1;
+      background-color: var(--bg-section);
+      color: var(--text-main);
+      border: 2px solid var(--accent);
+      border-radius: 0.75rem;
+      padding: 0.65rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .f-btn-theme:hover { filter: brightness(0.94); }
+
+#app-t1 .section-title {
+      border-bottom: 2px solid var(--line);
+    }
+#app-t1 input::placeholder, #app-t1 textarea::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
+#app-t1 select option {
+      color: var(--text-main);
+      background-color: var(--bg-field);
+    }
+#app-t1 select option[disabled] {
+      color: var(--text-muted);
+    }
+#app-t1 .preview-box {
+      white-space: pre-wrap;
+      min-height: 8rem;
+      padding: 0.85rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--field-border);
+      background: var(--bg-field);
+      color: var(--text-main);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      overflow-x: auto;
+    }
+
+    /* Головна картка форми: фон, рамка, тінь. */
+    #app-t2 .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--field-border);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Єдиний колір для підписів і заголовків. */
+    #app-t2 label, #app-t2 h2, #app-t2 h3 {
+      color: var(--text-main);
+      text-shadow: none;
+    }
+
+    /* Заголовки секцій з нижньою лінією. */
+    #app-t2 .section-title {
+      color: var(--text-main) !important;
+      border-bottom: 2px solid var(--line) !important;
+    }
+    #app-t2 .section-title-text {
+      color: var(--text-main) !important;
+    }
+
+    /* Лінія-розділювач у секціях із кнопкою праворуч. */
+    #app-t2 .section-divider {
+      border-bottom: 2px solid var(--line) !important;
+    }
+
+    /* Кожна секція форми має власну картку з відступами та рамкою.
+       (Раніше кожна секція мала свій індивідуальний відтінок кольору;
+       тепер — єдиний колір секції з активної теми, щоб теми working
+       однаково в усіх трьох вкладках.) */
+    #app-t2 form > section {
+      padding: 0.9rem;
+      border-radius: 1rem;
+      border: 1px solid var(--field-border);
+      background: var(--bg-section);
+    }
+
+    /* Загальний вигляд усіх полів: input, select, textarea і readonly. */
+    #app-t2 .input, #app-t2 .select, #app-t2 .textarea, #app-t2 .readonly {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.65rem;
+      border: 2px solid var(--field-border);
+      background-color: var(--bg-field);
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+
+    /* Колір підказок усередині порожніх полів. */
+    #app-t2 .input::placeholder, #app-t2 .textarea::placeholder, #app-t2 .readonly::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
+
+    /* Підсвітка поля, коли користувач натиснув у нього. */
+    #app-t2 .input:focus, #app-t2 .select:focus, #app-t2 .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+
+    /* Поля, які не редагуються вручну: наприклад автоматичний калібр. */
+    #app-t2 .readonly {
+      color: var(--text-muted);
+      background-color: var(--bg-field);
+      opacity: 0.85;
+    }
+
+    /* Внутрішні картки: ПЗРК/ЗРК, додаткова зброя, авто тощо. */
+    #app-t2 .block-card {
+      border: 2px solid var(--field-border) !important;
+      border-radius: 0.85rem;
+      background: var(--bg-section);
+    }
+
+    /* Загальна база для всіх кнопок. */
+    #app-t2 .btn-blue, #app-t2 .btn-red, #app-t2 .btn-copy, #app-t2 .btn-clear {
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      font-weight: 700;
+      border: 2px solid transparent;
+      min-height: 2.75rem;
+    }
+
+    /* Синя кнопка: додавання блоків. (Колір дій лишається сталим у всіх темах.) */
+    #app-t2 .btn-blue { background-color: #1d4ed8; color: #ffffff; }
+    #app-t2 .btn-blue:hover { background-color: #1e40af; }
+
+    /* Червона кнопка: видалення блоків. */
+    #app-t2 .btn-red { background-color: #b42318; color: #ffffff; }
+    #app-t2 .btn-red:hover { background-color: #8f1d14; }
+
+    /* Основна кнопка копіювання доповіді. */
+    #app-t2 .btn-copy {
+      width: 100%;
+      background-color: #0f766e;
+      color: #ffffff;
+      font-size: 1.05rem;
+      padding: 0.95rem 0.85rem;
+    }
+    #app-t2 .btn-copy:hover { background-color: #115e59; }
+
+    /* Кнопка очищення форми. */
+    #app-t2 .btn-clear {
+      width: 100%;
+      background-color: var(--bg-field);
+      color: var(--text-main);
+      border-color: var(--field-border);
+    }
+    #app-t2 .btn-clear:hover { filter: brightness(0.95); }
+
+    /* Вікно попереднього перегляду готового тексту. */
+    #app-t2 .preview-box {
+      white-space: pre-wrap;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      padding: 0.85rem;
+      border-radius: 0.85rem;
+      border: 2px solid var(--field-border);
+      color: var(--text-main);
+      background-color: var(--bg-field);
+      overflow-x: auto;
+    }
+
+    /* Перебиває деякі класи Tailwind, щоб текст у списках був читабельним. */
+    #app-t2 .text-gray-100, #app-t2 .text-gray-200 {
+      color: var(--text-main) !important;
+    }
+    #app-t2 .text-gray-300, #app-t2 .text-gray-400 {
+      color: var(--text-muted) !important;
+    }
+
+    /* Вигляд пунктів у випадаючих списках. */
+    #app-t2 option {
+      background-color: var(--bg-field);
+      color: var(--text-main);
+    }
+
+    /* Окремі правки для мобільних екранів.
+       (Виправлено: раніше тут був "#app-t2 #app", який нічого не знаходив
+       після перейменування контейнера — тепер посилається на сам контейнер.) */
+    @media (max-width: 640px) {
+      #app-t2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+      #app-t2 .form-card { border-radius: 1rem; }
+      #app-t2 label { font-weight: 650; }
+      #app-t2 .input, #app-t2 .select, #app-t2 .textarea, #app-t2 .readonly { font-size: 1.02rem; }
+    }
+
+#app-t3 form > section {
+      padding: 0.9rem;
+      border-radius: 1rem;
+      border: 1px solid var(--field-border);
+      background: var(--bg-section);
+    }
+#app-t3 section .rounded-lg.border {
+      background: var(--bg-field);
+      border-color: var(--field-border) !important;
+    }
+#app-t3 .label-red {
+      color: #ff4d4d;
+      font-weight: 900;
+    }
+#app-t3 .label-green {
+      color: #22c55e;
+      font-weight: 900;
+    }
+#app-t3 .btn-delete {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1.1;
+      min-height: 2.5rem;
+      min-width: 5.7rem;
+      padding-left: 0.55rem !important;
+      padding-right: 0.55rem !important;
+      font-weight: 600;
+    }
+#app-t3 .btn-delete-full {
+      width: 100%;
+      min-width: 0;
+    }
+#app-t3 .preview-box {
+      white-space: pre-wrap;
+      min-height: 12rem;
+      padding: 0.85rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--field-border);
+      background: var(--bg-field);
+      color: var(--text-main);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      overflow-x: auto;
+    }
+
+    /* Форма 3 масово використовує Tailwind-класи border-gray-700 / text-gray-100..400
+       та text-yellow-200 замість інлайн-стилів — тому тут перебиваємо саме ці класи
+       кольорами активної теми (!important — свідомо, це єдине надійне місце). */
+    #app-t3 .border-gray-700 { border-color: var(--field-border) !important; }
+    #app-t3 .text-gray-100 { color: var(--text-main) !important; }
+    #app-t3 .text-gray-200 { color: var(--text-main) !important; }
+    #app-t3 .text-gray-300 { color: var(--text-muted) !important; }
+    #app-t3 .text-gray-400 { color: var(--text-muted) !important; }
+    #app-t3 .text-yellow-200 { color: var(--warn-text) !important; }
+
+    /* Базовий колір тексту для всіх select — деякі select у вихідному коді
+       автора взагалі не мали класу кольору (лишались чорними на темному
+       тлі). !important-правила вище (для select зі станом
+       "порожньо/заповнено") мають вищий пріоритет і далі працюють як слід. */
+    #app-t3 select {
+      color: var(--text-main);
+    }
+
+    /* Підказки (placeholder) у звичайних текстових полях форми 3 раніше
+       залишались стандартного сірого кольору браузера — тепер теж
+       узгоджені з активною темою. */
+    #app-t3 input::placeholder, #app-t3 textarea::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
+
+  </style>
+</head>
+<body class="palette-neutral">
+
+  <nav class="tab-bar">
+    <button type="button" class="tab-btn tab-btn-active" id="tab-btn-1" onclick="showTab(1)">Застосування</button>
+    <button type="button" class="tab-btn" id="tab-btn-2" onclick="showTab(2)">Щоденна доповідь</button>
+    <button type="button" class="tab-btn" id="tab-btn-3" onclick="showTab(3)">Стан та положення</button>
+  </nav>
+
+  <div class="tab-panel" id="tab-panel-1">
+    <div id="app-t1" class="min-h-screen py-5">
+      <div class="container max-w-xl mx-auto f-card p-6 rounded-xl shadow-2xl border">
+<form id="t1-form" @submit.prevent>
+        <div class="flex flex-col gap-1">
+
+          <h2 class="font-semibold section-title pb-1 text-center">ЗАСТОСУВАННЯ</h2>
+
+          <!-- ПІДРОЗДІЛ -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-pidrozdil" class="mb-1 text-left">Підрозділ:</label>
+            <!-- Випадаючий список з масиву units -->
+            <select
+              id="t1-pidrozdil"
+              v-model="formData.pidrozdil"
+              :class="['w-full p-2 rounded f-field', formData.pidrozdil ? 'f-field-filled' : 'f-field-empty']"
+            >
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
+            </select>
+          </div>
+
+          <!-- ПОЗИВНИЙ (префікс + сам позивний з маскою) -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-pozivniy" class="mb-1 text-left">Позивний:</label>
+            <div class="flex gap-2 w-full">
+              <!-- Префікс позивного (напр. ВГ / МВГ) -->
+              <select
+                id="t1-pozivniy-prefix"
+                v-model="formData.pozivniyPrefix"
+                :class="['w-1/3 p-2 rounded f-field', formData.pozivniyPrefix ? 'f-field-filled' : 'f-field-empty']"
+              >
+                <option value="" disabled hidden>Оберіть</option>
+                <option v-for="prefix in prefixes" :key="prefix" :value="prefix">{{ prefix }}</option>
+              </select>
+
+              <!-- Сам позивний: тільки літери/цифри, автоматичний аперкейс -->
+              <the-mask
+                id="t1-pozivniy"
+                type="text"
+                v-model="formData.pozivniy"
+                class="w-2/3 p-2 rounded f-field f-field-filled"
+                mask="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                :tokens="hexTokens"
+                placeholder="Впишіть"
+              />
+            </div>
+          </div>
+
+          <!-- НАСЕЛЕНИЙ ПУНКТ -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-naseleniy-punkt" class="mb-1 text-left">Н.П.:</label>
+            <div class="flex flex-row gap-2 items-center w-full">
+              <!-- Маска дозволяє літери, пробіли, автоматичний аперкейс -->
+              <the-mask
+                id="t1-naseleniy-punkt"
+                type="text"
+                v-model="formData.naseleniyPunkt"
+                class="flex-1 p-2 rounded f-field f-field-filled"
+                mask="BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+                :tokens="hexTokens"
+                placeholder="Впишіть"
+              />
+            </div>
+          </div>
+
+          <!-- ОБЛАСТЬ -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-oblast" class="mb-1 text-left">Область:</label>
+            <div class="flex gap-2 w-full">
+              <!-- Область одразу у короткій формі: Сумська, Чернігівська тощо -->
+              <select
+                id="t1-oblast"
+                v-model="formData.oblast"
+                :class="['w-full p-2 rounded f-field', formData.oblast ? 'f-field-filled' : 'f-field-empty']"
+              >
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="region in regions" :key="region" :value="region">{{ region }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ДАТА -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-date" class="mb-1 text-left">Дата:</label>
+            <input
+              id="t1-date"
+              type="date"
+              v-model="formData.date"
+              class="w-full p-2 rounded f-field"
+              :class="formData.date ? 'f-field-filled' : 'f-field-empty'"
+              placeholder="Оберіть зі списку"
+            />
+          </div>
+
+          <!-- ЧАС -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-time" class="mb-1 text-left">Час:</label>
+            <input
+              id="t1-time"
+              type="time"
+              v-model="formData.time"
+              class="w-full p-2 rounded f-field"
+              :class="formData.time ? 'f-field-filled' : 'f-field-empty'"
+              placeholder="Оберіть зі списку"
+            />
+          </div>
+
+          <!-- ЗБРОЯ (ТЕПЕР МОЖНА КІЛЬКА ЗАПИСІВ) -->
+          <div class="flex flex-col mb-2">
+            <label class="mb-1 text-left">Зброя:</label>
+            <div class="flex flex-col gap-2">
+              <!-- Один запис зброї -->
+              <div
+                v-for="(w, index) in formData.weapons"
+                :key="index"
+                class="flex gap-2 items-center"
+              >
+                <select
+                  v-model="w.name"
+                  :class="['w-full p-2 rounded f-field', w.name ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Оберіть зі списку</option>
+                  <option
+                    v-for="weaponOption in weapons"
+                    :key="weaponOption"
+                    :value="weaponOption"
+                  >
+                    {{ weaponOption }}
+                  </option>
+                </select>
+                <!-- Кнопка "Видалити" показується, якщо зброї більше однієї -->
+                <button
+                  type="button"
+                  class="bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2"
+                  @click="removeWeapon(index)"
+                  v-if="formData.weapons.length > 1"
+                >
+                  Видалити
+                </button>
+              </div>
+              <!-- Додати ще одну зброю -->
+              <button
+                type="button"
+                @click="addWeapon"
+                class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 mt-2 self-start"
+              >
+                Додати зброю
+              </button>
+            </div>
+          </div>
+
+          <!-- НОМЕР ЦІЛІ -->
+          <div class="flex flex-col mb-2">
+            <label for="t1-target-number" class="mb-1 text-left">№ цілі:</label>
+            <!-- Маска ####: тільки 4 цифри -->
+            <input
+              id="t1-target-number"
+              type="text"
+              v-model="formData.targetNumber"
+              v-mask="'####'"
+              placeholder="0000"
+              class="w-full p-2 rounded f-field f-field-filled"
+            />
+          </div>
+
+          <!-- ВИСОТА -->
+          <div v-if="showHeightField" class="flex flex-col mb-2">
+            <label for="t1-height" class="mb-1 text-left">Висота:</label>
+            <input
+              id="t1-height"
+              type="text"
+              v-model="formData.height"
+              v-mask="'####'"
+              placeholder="0000"
+              class="w-full p-2 rounded f-field f-field-filled"
+            />
+          </div>
+
+          <!-- РЕЗУЛЬТАТ ЗАСТОСУВАННЯ -->
+          <div class="flex flex-col mb-2">
+            <label class="mb-1 text-left">Результат:</label>
+            <select
+              v-model="formData.result"
+              :class="['w-full p-2 rounded f-field', formData.result ? 'f-field-filled' : 'f-field-empty']"
+            >
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="result in results" :key="result" :value="result">{{ result }}</option>
+            </select>
+          </div>
+
+          <!-- РОЗХІД БОЄПРИПАСІВ (показується, якщо зброя застосовувалась і це не вибух) -->
+          <div v-if="showRozxid">
+            <div class="mb-2">Розхід:</div>
+            <div class="flex flex-col gap-2">
+              <!-- Один рядок розходу БК -->
+              <div v-for="(item, index) in formData.rozxid" :key="index" class="flex flex-col gap-2 items-start">
+                <!-- Тип боєприпаса -->
+                <select
+                  v-model="item.type"
+                  :class="['w-full p-2 rounded f-field', item.type ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Оберіть зі списку</option>
+                  <option v-for="ammo in ammoTypes" :key="ammo" :value="ammo">{{ ammo }}</option>
+                </select>
+                <!-- Кількість + кнопка видалення рядка -->
+                <div class="flex w-full gap-2">
+                  <input
+                    type="text"
+                    v-model="item.quantity"
+                    placeholder="Кількість"
+                    v-mask="'####'"
+                    class="w-full p-2 rounded f-field f-field-filled"
+                  />
+                  <button
+                    type="button"
+                    class="bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2"
+                    @click="removeRozxid(index)"
+                  >
+                    Видалити
+                  </button>
+                </div>
+              </div>
+              <!-- Кнопка додати ще один рядок розходу -->
+              <button
+                type="button"
+                @click="addRozxid"
+                class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 mt-2"
+              >
+                Додати розхід
+              </button>
+            </div>
+          </div>
+
+          <!-- ОПИС, якщо результат = "вибух" -->
+          <div v-if="formData.result === 'вибух'" class="my-4 space-y-2">
+            <label>Опис:</label>
+            <div class="flex flex-col gap-2">
+              <!-- Азимут/дальність -->
+              <div class="flex w-full flex-row items-center gap-4">
+                <span class="w-auto">А-</span>
+                <input
+                  type="text"
+                  v-model="formData.angle"
+                  v-mask="'###'"
+                  placeholder="360"
+                  maxlength="3"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                  @input="onAngleInput"
+                />
+                <span class="w-auto">Д-</span>
+                <input
+                  type="text"
+                  v-model="formData.distance"
+                  v-mask="'#####'"
+                  inputmode="numeric"
+                  pattern="\d*"
+                  placeholder="00000"
+                  maxlength="5"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                />
+              </div>
+
+              <!-- Вибух: кількість, місце (на землі / у повітрі) -->
+              <div class="flex gap-4">
+                <input
+                  type="text"
+                  value="вибух"
+                  readonly
+                  class="w-full p-2 rounded bg-transparent f-border border-2 text-center f-text-muted"
+                />
+                <select
+                  v-model="formData.explosionCount"
+                  :class="['w-full p-2 rounded f-field', formData.explosionCount ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Кількість</option>
+                  <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+                </select>
+                <select
+                  v-model="formData.explosionPlace"
+                  :class="['w-full p-2 rounded f-field', formData.explosionPlace ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Місце</option>
+                  <option value="на землі">на землі</option>
+                  <option value="у повітрі">у повітрі</option>
+                </select>
+              </div>
+
+              <!-- Стан справ (короткий текст) -->
+              <div>
+                <input
+                  type="text"
+                  v-model="formData.explosionStatus"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                  placeholder="Стан справ на ОКІ"
+                  maxlength="64"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ОПИС, якщо зброя застосовувалась (не вибух, не "не застосовувалась") -->
+          <div v-if="formData.result !== 'вибух' && formData.result !== 'не застосовувалась'" class="my-4">
+            <label>Опис:</label>
+            <div class="flex flex-col gap-2">
+              <!-- А, Д, К -->
+              <div class="flex flex-row gap-4">
+                <div class="flex items-center gap-1 w-1/3">
+                  <span>А-</span>
+                  <input
+                    type="text"
+                    v-model="formData.angle"
+                    v-mask="'###'"
+                    placeholder="360"
+                    maxlength="3"
+                    class="w-full p-2 rounded f-field f-field-filled"
+                    @input="onAngleInput"
+                  />
+                </div>
+                <div class="flex items-center gap-1 w-1/3">
+                  <span>Д-</span>
+                  <input
+                    type="text"
+                    v-model="formData.distance"
+                    v-mask="'#####'"
+                    inputmode="numeric"
+                    pattern="\d*"
+                    placeholder="00000"
+                    maxlength="5"
+                    class="w-full p-2 rounded f-field f-field-filled"
+                  />
+                </div>
+                <div class="flex items-center gap-1 w-1/3">
+                  <span>К-</span>
+                  <input
+                    type="text"
+                    v-model="formData.krok"
+                    v-mask="'###'"
+                    placeholder="360"
+                    maxlength="3"
+                    class="w-full p-2 rounded f-field f-field-filled"
+                    @input="onKrokInput"
+                  />
+                </div>
+              </div>
+
+              <!-- Дія (обстріляно/знищено), кількість, клас цілі -->
+              <div class="flex flex-row gap-4 mt-2">
+                <div class="w-1/3">
+                  <!-- Якщо результат "не знищено" — фіксований напис "обстріляно" -->
+                  <input
+                    v-if="formData.result === 'не знищено'"
+                    type="text"
+                    value="обстріляно"
+                    readonly
+                    class="w-full p-2 rounded bg-transparent f-border border text-center f-text-muted"
+                  />
+                  <!-- Якщо результат "ЗНИЩЕНО" — фіксований напис "ЗНИЩЕНО" -->
+                  <input
+                    v-else-if="formData.result === 'ЗНИЩЕНО'"
+                    type="text"
+                    value="ЗНИЩЕНО"
+                    readonly
+                    class="w-full p-2 rounded bg-transparent f-border border text-center f-text-muted"
+                  />
+                  <!-- Інші випадки: можна вибрати дію вручну -->
+                  <select
+                    v-else
+                    v-model="formData.action"
+                    :class="['w-full p-2 rounded f-field', formData.action ? 'f-field-filled' : 'f-field-empty']"
+                  >
+                    <option value="" disabled hidden>Оберіть дію</option>
+                    <option v-for="action in actions" :key="action" :value="action">{{ action }}</option>
+                  </select>
+                </div>
+
+                <!-- Кількість цілей -->
+                <div class="w-1/3">
+                  <select
+                    v-model="formData.targetCount"
+                    :class="['w-full p-2 rounded f-field', formData.targetCount ? 'f-field-filled' : 'f-field-empty']"
+                  >
+                    <option value="" disabled hidden>Кількість</option>
+                    <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                </div>
+
+                <!-- Клас цілі (БПЛА/КР) + тип БПЛА -->
+                <div class="w-1/3 flex flex-col gap-2">
+                  <select
+                    v-model="formData.targetClass"
+                    :class="['w-full p-2 rounded f-field', formData.targetClass ? 'f-field-filled' : 'f-field-empty']"
+                  >
+                    <option value="" disabled hidden>Клас</option>
+                    <option value="БПЛА">БПЛА</option>
+                    <option value="КР">КР</option>
+                  </select>
+                  <select
+                    v-if="formData.targetClass === 'БПЛА'"
+                    v-model="formData.type"
+                    :class="['w-full p-2 rounded f-field', formData.type ? 'f-field-filled' : 'f-field-empty']"
+                  >
+                    <option value="" disabled hidden>Тип БПЛА</option>
+                    <option v-for="type in uavTypes" :key="type" :value="type">{{ type }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ОПИС, якщо "не застосовувалась" -->
+          <div v-if="formData.result === 'не застосовувалась'" class="my-4 space-y-2">
+            <label>Опис:</label>
+            <div class="flex flex-col items-center gap-2">
+              <!-- А, Д, К показуються, доки не вибрано "акустично/візуально не виявлено" -->
+              <div v-if="!isNotDetectedDescription" class="flex flex-row items-center gap-2 w-full">
+                <span class="w-auto">А-</span>
+                <input
+                  type="text"
+                  v-model="formData.angle"
+                  v-mask="'###'"
+                  placeholder="360"
+                  maxlength="3"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                  @input="onAngleInput"
+                />
+                <span class="w-auto">Д-</span>
+                <input
+                  type="text"
+                  v-model="formData.distance"
+                  v-mask="'#####'"
+                  inputmode="numeric"
+                  pattern="\d*"
+                  placeholder="00000"
+                  maxlength="5"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                />
+                <span class="w-auto">К-</span>
+                <input
+                  type="text"
+                  v-model="formData.krok"
+                  v-mask="'###'"
+                  placeholder="360"
+                  maxlength="3"
+                  class="w-full p-2 rounded f-field f-field-filled"
+                  @input="onKrokInput"
+                />
+              </div>
+
+              <!-- Режим виявлення / не виявлення.
+                   Якщо обрано "акустично/візуально не виявлено", кількість, клас і тип не показуються. -->
+              <div class="flex flex-row gap-2 w-full">
+                <select
+                  v-model="formData.detectionMode"
+                  :class="['w-full p-2 rounded f-field', formData.detectionMode ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Виявлено/не виявлено</option>
+                  <option value="акустично">акустично</option>
+                  <option value="візуально">візуально</option>
+                  <option value="акустично/візуально не виявлено">акустично/візуально не виявлено</option>
+                </select>
+                <select
+                  v-if="!isNotDetectedDescription"
+                  v-model="formData.targetCount"
+                  :class="['w-full p-2 rounded f-field', formData.targetCount ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Кільк.</option>
+                  <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+                </select>
+                <select
+                  v-if="!isNotDetectedDescription"
+                  v-model="formData.targetClass"
+                  :class="['w-full p-2 rounded f-field', formData.targetClass ? 'f-field-filled' : 'f-field-empty']"
+                >
+                  <option value="" disabled hidden>Клас</option>
+                  <option value="БПЛА">БПЛА</option>
+                  <option value="КР">КР</option>
+                </select>
+              </div>
+
+              <!-- Тип БПЛА (якщо клас = БПЛА і ціль виявлено) -->
+              <select
+                v-if="!isNotDetectedDescription && formData.targetClass === 'БПЛА'"
+                v-model="formData.type"
+                :class="['w-full p-2 rounded f-field', formData.type ? 'f-field-filled' : 'f-field-empty']"
+              >
+                <option value="" disabled hidden>Тип БПЛА</option>
+                <option v-for="type in uavTypes" :key="type" :value="type">{{ type }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- БЛОК: КОМЕНТАР -->
+          <div class="my-4">
+            <label for="t1-comment" class="mb-1 text-left">Коментар:</label>
+            <!-- Довільний текст. Якщо порожній, у звіті буде "-" -->
+            <textarea
+              id="t1-comment"
+              v-model="formData.comment"
+              rows="3"
+              class="w-full p-2 rounded f-field f-field-filled"
+              placeholder="Додаткові відомості..."
+            ></textarea>
+          </div>
+
+          <!-- ОСОБОВИЙ СКЛАД -->
+          <div class="my-4">
+            <label>Особовий склад:</label>
+            <div class="rounded-xl mt-2">
+              <div class="flex flex-col gap-2">
+                <!-- Один військовослужбовець -->
+                <div
+                  v-for="(person, index) in formData.personnel"
+                  :key="index"
+                  class="flex flex-col gap-2 items-center"
+                >
+                  <select
+                    v-model="person.rank"
+                    :class="['w-full p-2 rounded f-field', person.rank ? 'f-field-filled' : 'f-field-empty']"
+                  >
+                    <option value="" disabled hidden>Звання</option>
+                    <option v-for="rank in ranks" :key="rank" :value="rank">{{ rank }}</option>
+                  </select>
+                  <input
+                    type="text"
+                    v-model="person.pib"
+                    placeholder="Залужний В.Ф."
+                    class="w-full p-2 rounded f-field f-field-filled"
+                  />
+                  <button
+                    type="button"
+                    class="bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2"
+                    @click="removePersonnel(index)"
+                  >
+                    Видалити
+                  </button>
+                </div>
+
+                <!-- Кнопка додати ще одного -->
+                <button
+                  type="button"
+                  @click="addPersonnel"
+                  class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 mt-2"
+                >
+                  Додати особовий склад
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Попередній перегляд готового тексту доповіді (як у двох інших вкладках) -->
+          <div>
+            <label class="mb-1 text-left">Попередній перегляд:</label>
+            <pre class="preview-box">{{ buildReport() }}</pre>
+          </div>
+
+          <!-- КНОПКИ: СКОПІЮВАТИ / ОЧИСТИТИ / ТЕМА (єдиний вигляд для всіх трьох вкладок) -->
+          <div class="f-btn-row">
+            <!-- Копіює сформований текст у буфер обміну -->
+            <button type="button" @click="copyData" class="f-btn-copy">
+              Скопіювати
+            </button>
+
+            <div class="f-btn-secondary-row">
+              <!-- Очищає всі поля форми і LocalStorage -->
+              <button type="button" @click="clearForm" class="f-btn-clear">
+                Очистити форму
+              </button>
+              <!-- Перемикає кольорову тему по колу (спільна для всіх трьох вкладок) -->
+              <button type="button" class="theme-btn f-btn-theme" onclick="cycleTheme()">◻ Нейтральна</button>
+            </div>
+          </div>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-panel-2" style="display:none;">
+    <div id="app-t2" class="min-h-screen py-3 px-2 sm:px-4">
+      <div class="w-full max-w-xl mx-auto rounded-2xl shadow-2xl p-3 sm:p-5 form-card">
+<form @submit.prevent="copyData" class="space-y-3">
+        <!-- Верхні кнопки-посилання. -->
+        <!-- БЛОК 1. Основні дані: дата, підрозділ, позивний, населений пункт, область. -->
+        <section class="space-y-3">
+          <h2 class="font-semibold section-title pb-1 text-center">ЩОДЕННА ДОПОВІДЬ</h2>
+
+          <!-- Дата доповіді. Значення записується у formData.date. -->
+
+          <div class="flex flex-col">
+            <label for="t2-date" class="mb-1 text-left">Дата:</label>
+            <input id="t2-date" type="date" v-model="formData.date" class="input" />
+          </div>
+
+          <!-- Вибір підрозділу зі списку units, який описаний у JavaScript. -->
+          <div class="flex flex-col">
+            <label for="t2-unit" class="mb-1 text-left">Підрозділ:</label>
+            <select id="t2-unit" v-model="formData.unit" class="select" :class="formData.unit ? 'text-gray-100' : 'text-gray-400'">
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
+              <option value="інша">інша</option>
+            </select>
+          </div>
+
+          <!-- Це поле з'являється тільки тоді, коли в підрозділі вибрано "інша". -->
+          <div v-if="formData.unit === 'інша'" class="flex flex-col">
+            <label class="mb-1 text-left">Інший підрозділ:</label>
+            <input type="text" v-model="formData.unitOther" @input="uppercaseField(formData, 'unitOther')" placeholder="Впишіть підрозділ" class="input" />
+          </div>
+
+          <!-- Позивний. Під час введення normalizeCallSign() чистить зайві символи і нормалізує регістр. -->
+          <div class="flex flex-col">
+            <label for="t2-callSign" class="mb-1 text-left">Позивний:</label>
+            <input id="t2-callSign" type="text" v-model="formData.callSign" @input="normalizeCallSign" placeholder="Впишіть позивний без МВГ/ВГ" class="input" />
+          </div>
+
+          <!-- Населений пункт. normalizeSettlement() переводить у верхній регістр і залишає тільки українські літери. -->
+          <div class="flex flex-col">
+            <label for="t2-settlement" class="mb-1 text-left">Н.П.:</label>
+            <input id="t2-settlement" type="text" v-model="formData.settlement" @input="normalizeSettlement" placeholder="Впишіть населений пункт" class="input" />
+          </div>
+
+          <!-- Область вибирається зі списку regions у JavaScript. -->
+          <div class="flex flex-col">
+            <label for="t2-oblast" class="mb-1 text-left">Область:</label>
+            <select id="t2-oblast" v-model="formData.oblast" class="select" :class="formData.oblast ? 'text-gray-100' : 'text-gray-400'">
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="region in regions" :key="region" :value="region">{{ region }}</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- БЛОК 2. Зброя: ПЗРК/ЗРК і додаткова зброя. -->
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 section-divider pb-1">
+            <h2 class="font-semibold section-title-text">Зброя</h2>
+            <!-- Кнопка додає блок "Зброя2/Зброя3". Максимум два додаткові блоки. -->
+            <button type="button" @click="addWeapon" v-if="formData.weapons.length < 2" class="btn-blue">Додати</button>
+          </div>
+
+          <!-- Окремий внутрішній блок для ПЗРК/ЗРК. -->
+          <div class="space-y-3 rounded-lg block-card p-3">
+            <h3 class="font-semibold">ПЗРК/ЗРК</h3>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">ПЗРК/ЗРК:</label>
+              <!-- При зміні типу запускається handlePzrkChange(), щоб очистити зайві поля. -->
+              <select v-model="formData.pzrk.type" @change="handlePzrkChange" class="select">
+                <option v-for="item in pzrkOptions" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+
+            <!--
+              Якщо вибрано не "відсутній", показуються кількісні поля.
+              Для ЗКР/ЗРК поле НБЖ приховується через isZrkType().
+            -->
+            <div v-if="formData.pzrk.type !== 'відсутній'" class="grid grid-cols-1 gap-3" :class="isZrkType(formData.pzrk.type) ? 'sm:grid-cols-1' : 'sm:grid-cols-2'">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">ЗКР:</label>
+                <select v-model="formData.pzrk.zkr" class="select">
+                  <option value="" disabled hidden>Кількість</option>
+                  <option v-for="n in range(0, 6)" :key="'zkr' + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+              <!-- НБЖ показується тільки для ПЗРК. Для ЗКР/ЗРК його немає ні на екрані, ні в доповіді. -->
+              <div v-if="!isZrkType(formData.pzrk.type)" class="flex flex-col">
+                <label class="mb-1 text-left">НБЖ:</label>
+                <select v-model="formData.pzrk.nbzh" class="select">
+                  <option value="" disabled hidden>Кількість</option>
+                  <option v-for="n in range(0, 6)" :key="'nbzh' + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Підказка видно тільки поки не додано жодної додаткової зброї. -->
+          <p v-if="formData.weapons.length === 0" class="text-sm text-gray-400">Додайте блок, якщо є Зброя2 або Зброя3.</p>
+
+          <!-- v-for створює окремий блок для кожної доданої одиниці зброї. -->
+          <div v-for="(weapon, index) in formData.weapons" :key="weapon.id" class="space-y-3 rounded-lg block-card p-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold">Зброя{{ index + 2 }}</h3>
+              <button type="button" @click="removeWeapon(index)" class="btn-red">Видалити</button>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Тип зброї:</label>
+              <!-- При виборі типу зброї автоматично підтягується калібр/БК через syncWeaponAmmo(). -->
+              <select v-model="weapon.type" @change="syncWeaponAmmo(weapon)" class="select" :class="weapon.type ? 'text-gray-100' : 'text-gray-400'">
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="item in weaponOptions" :key="item" :value="item">{{ cleanWeaponName(item) }}</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Калібр:</label>
+                <input type="text" :value="weapon.ammo || weaponAmmo(weapon.type)" readonly placeholder="Калібр підтягнеться автоматично" class="readonly" />
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість набоїв:</label>
+                <input type="number" min="0" step="1" v-model="weapon.ammoQty" @input="integerField(weapon, 'ammoQty')" placeholder="Введіть кількість" class="input" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- БЛОК 3. Стрілецька зброя: тип, кількість, калібр, кількість набоїв. -->
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 section-divider pb-1">
+            <h2 class="font-semibold section-title-text">Стрілецька зброя</h2>
+            <!-- Додає ще один блок стрілецької зброї. Обмеження: максимум два блоки. -->
+            <button type="button" @click="addRifle" v-if="formData.rifles.length < 2" class="btn-blue">Додати</button>
+          </div>
+
+          <!-- Один блок стрілецької зброї. Перший є завжди, другий додається кнопкою. -->
+          <div v-for="(rifle, index) in formData.rifles" :key="rifle.id" class="space-y-3 rounded-lg block-card p-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold">Стрілецька зброя{{ index + 1 }}</h3>
+              <button type="button" @click="removeRifle(index)" v-if="formData.rifles.length > 1" class="btn-red">Видалити</button>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Тип:</label>
+              <!-- syncRifleAmmo() автоматично підставляє калібр для вибраної стрілецької зброї. -->
+              <select v-model="rifle.type" @change="syncRifleAmmo(rifle)" class="select" :class="rifle.type ? 'text-gray-100' : 'text-gray-400'">
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="item in smallArmsOptions" :key="item.name" :value="item.name">{{ item.name }}</option>
+              </select>
+            </div>
+
+            <!-- Дані старшого розрахунку: звання зі списку ranks і ПІБ вручну. -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість:</label>
+                <select v-model="rifle.qty" class="select" :class="rifle.qty ? 'text-gray-100' : 'text-gray-400'">
+                  <option value="" disabled hidden>Оберіть</option>
+                  <option v-for="n in range(1, 6)" :key="'rifleqty' + rifle.id + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Калібр:</label>
+                <input type="text" :value="rifle.ammo || rifleAmmo(rifle.type)" readonly placeholder="Автоматично" class="readonly" />
+              </div>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість набоїв:</label>
+                <input type="number" min="0" step="1" v-model="rifle.ammoQty" @input="integerField(rifle, 'ammoQty')" placeholder="360" class="input" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- БЛОК 4. Авто, продукти, старший розрахунку та потреби в забезпеченні. -->
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 section-divider pb-1">
+            <h2 class="font-semibold section-title-text">Авто та забезпечення</h2>
+            <!-- Авто додається тільки один раз. Якщо блок уже є, кнопка зникає. -->
+            <button type="button" @click="addVehicle" v-if="!formData.vehicle.enabled" class="btn-blue">Додати Авто</button>
+          </div>
+
+          <!-- Сам блок авто. Показується тільки після натискання "Додати Авто". -->
+          <div v-if="formData.vehicle.enabled" class="space-y-3 rounded-lg block-card p-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold">Авто</h3>
+              <button type="button" @click="removeVehicle" class="btn-red">Видалити</button>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Марка модель:</label>
+              <!-- Марка й модель авто. uppercaseField() переводить введення у верхній регістр. -->
+              <input type="text" v-model="formData.vehicle.brand" @input="uppercaseField(formData.vehicle, 'brand')" placeholder="NISSAN NAVARA" class="input" />
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Вид палива:</label>
+              <select v-model="formData.vehicle.fuel" class="select" :class="formData.vehicle.fuel ? 'text-gray-100' : 'text-gray-400'">
+                <option value="" disabled hidden>Оберіть</option>
+                <option value="ДП">ДП</option>
+                <option value="АБ">АБ</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Залишок пального л.:</label>
+              <!-- Залишок пального: fuelLeftField() залишає тільки цифри й максимум 4 символи. -->
+              <input type="text" inputmode="numeric" maxlength="4" v-model="formData.vehicle.fuelLeft" @input="fuelLeftField" placeholder="Наприклад 120" class="input" />
+            </div>
+          </div>
+
+          <!-- Вибір: або дата отримання продуктів, або харчування в ППД. -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Продукти отримано:</label>
+            <select v-model="formData.productsMode" class="select" :class="formData.productsMode ? 'text-gray-100' : 'text-gray-400'">
+              <option value="" disabled hidden>Оберіть з варіантів</option>
+              <option value="date">Вкажу дату отримання нижче</option>
+              <option value="ppd">харчування в ППД</option>
+            </select>
+          </div>
+
+          <!-- Дата продуктів показується тільки якщо вибрано режим "дата отримання". -->
+          <div v-if="formData.productsMode === 'date'" class="flex flex-col">
+            <label class="mb-1 text-left">Дата отримання продуктів:</label>
+            <input type="date" v-model="formData.productsDate" class="input" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="flex flex-col sm:col-span-1">
+              <label class="mb-1 text-left">Звання старшого:</label>
+              <select v-model="formData.senior.rank" class="select" :class="formData.senior.rank ? 'text-gray-100' : 'text-gray-400'">
+                <option value="" disabled hidden>Оберіть</option>
+                <option v-for="rank in ranks" :key="rank" :value="rank">{{ rank }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col sm:col-span-2">
+              <label class="mb-1 text-left">ПІБ старшого:</label>
+              <input type="text" v-model="formData.senior.pib" placeholder="Залужний В.Ф.." class="input" />
+            </div>
+          </div>
+
+          <!-- Вільне текстове поле для потреб у забезпеченні. -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Потреба в забезпечені:</label>
+            <textarea v-model="formData.needs" rows="3" class="textarea"></textarea>
+          </div>
+
+        </section>
+
+        <!-- БЛОК 5. Попередній перегляд: показує готовий текст, який буде скопійовано. -->
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold section-title pb-1">Попередній перегляд</h2>
+          <!-- buildReport() збирає всі заповнені поля в один текст доповіді. -->
+          <pre class="preview-box">{{ buildReport() }}</pre>
+        </section>
+
+        <!-- БЛОК 6. Кнопки керування формою (єдиний вигляд для всіх трьох вкладок). -->
+        <section class="space-y-3 pt-2">
+          <div class="f-btn-row">
+            <!-- type="submit" запускає @submit.prevent на формі, тобто функцію copyData(). -->
+            <button type="submit" class="f-btn-copy">Скопіювати</button>
+            <div class="f-btn-secondary-row">
+              <!-- Очищає всі поля й видаляє збережені дані з localStorage. -->
+              <button type="button" @click="clearForm" class="f-btn-clear">Очистити форму</button>
+              <!-- Перемикає кольорову тему по колу (спільна для всіх трьох вкладок) -->
+              <button type="button" class="theme-btn f-btn-theme" onclick="cycleTheme()">◻ Нейтральна</button>
+            </div>
+          </div>
+        </section>
+      </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-panel-3" style="display:none;">
+    <div id="app-t3" class="min-h-screen py-3 px-2 sm:px-4">
+      <div class="w-full max-w-xl mx-auto rounded-xl shadow-2xl p-3 sm:p-5 f-card">
+<form @submit.prevent="copyData" class="space-y-3">
+        <section class="space-y-3">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1 text-center">СТАН ТА ПОЛОЖЕННЯ</h2>
+
+          <div class="flex flex-col">
+            <label for="t3-date" class="mb-1 text-left">Дата:</label>
+            <input id="t3-date" type="date" v-model="formData.date" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.date ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);" />
+          </div>
+
+          <div class="flex flex-col">
+            <label for="t3-unit" class="mb-1 text-left">Підрозділ:</label>
+            <select id="t3-unit" v-model="formData.unit" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.unit ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
+            </select>
+          </div>
+
+
+          <div class="flex flex-col">
+            <label for="t3-callSign" class="mb-1 text-left">Позивний:</label>
+            <input id="t3-callSign" type="text" v-model="formData.callSign" @input="normalizeCallSign" placeholder="Впишіть позивний без МВГ ВГ" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+          </div>
+
+          <div class="flex flex-col">
+            <label for="t3-settlement" class="mb-1 text-left">Н.П.:</label>
+            <input id="t3-settlement" type="text" v-model="formData.settlement" @input="normalizeSettlement" placeholder="Впишіть населений пункт" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+          </div>
+
+          <div class="flex flex-col">
+            <label for="t3-oblast" class="mb-1 text-left">Область:</label>
+            <select id="t3-oblast" v-model="formData.oblast" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.oblast ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+              <option value="" disabled hidden>Оберіть зі списку</option>
+              <option v-for="region in regions" :key="region" :value="region">{{ region }}</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col">
+            <label for="t3-district" class="mb-1 text-left">Район:</label>
+            <select id="t3-district" v-model="formData.district" :disabled="!formData.oblast" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-60" :class="formData.district ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+              <option value="" disabled hidden>{{ formData.oblast ? 'Оберіть район' : 'Спочатку оберіть область' }}</option>
+              <option v-for="district in districtsForSelected" :key="district" :value="district">{{ district }}</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">ПЗРК</h2>
+
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">ПЗРК:</label>
+            <select v-model="formData.pzrk.type" @change="handlePzrkChange" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+              <option v-for="item in pzrkOptions" :key="item" :value="item">{{ item }}</option>
+            </select>
+          </div>
+
+          <div v-if="formData.pzrk.type !== 'відсутній'" class="space-y-3">
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Заводський номер:</label>
+              <input type="text" v-model="formData.pzrk.serial" @input="uppercaseField(formData.pzrk, 'serial')" placeholder="25" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">ЗКР:</label>
+                <select v-model="formData.pzrk.zkr" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                  <option value="" disabled hidden>Кількість</option>
+                  <option v-for="n in range(0, 6)" :key="'zkr' + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">НБЖ:</label>
+                <select v-model="formData.pzrk.nbzh" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                  <option value="" disabled hidden>Кількість</option>
+                  <option v-for="n in range(0, 6)" :key="'nbzh' + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Наявність кріплення для тепловізійного прицілу до ЗКР ПЗРК:</label>
+              <select v-model="formData.pzrk.mount" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть</option>
+                <option value="так">так</option>
+                <option value="ні">ні</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Тепловізійний приціл до ПЗРК:</label>
+              <select v-model="formData.pzrk.thermal" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option value="ні">ні</option>
+                <option value="так">так</option>
+              </select>
+            </div>
+
+            <div v-if="formData.pzrk.thermal === 'так'" class="space-y-3 rounded-lg border border-gray-700 p-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex flex-col">
+                  <label class="mb-1 text-left">Виробник:</label>
+                  <input type="text" v-model="formData.pzrk.thermalMaker" placeholder="Pulsar" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+                </div>
+                <div class="flex flex-col">
+                  <label class="mb-1 text-left">Модель прицілу:</label>
+                  <input type="text" v-model="formData.pzrk.thermalModel" placeholder="Thermion 2 XP50 Pro" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+                </div>
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Заводський номер:</label>
+                <input type="text" v-model="formData.pzrk.thermalSerial" @input="uppercaseField(formData.pzrk, 'thermalSerial')" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-700 pb-1">
+            <h2 class="font-semibold text-gray-200">Зброя 2/3</h2>
+            <button type="button" @click="addWeapon" v-if="formData.weapons.length < 2" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <p v-if="formData.weapons.length === 0" class="text-sm text-gray-400">Додайте блок, якщо є додаткова зброя (ВКК, ЗРК).</p>
+
+          <div v-for="(weapon, index) in formData.weapons" :key="weapon.id" class="space-y-3 rounded-lg border border-gray-700 p-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold">Зброя{{ index + 2 }}</h3>
+              <button type="button" @click="removeWeapon(index)" class="btn-delete bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Тип зброї:</label>
+              <select v-model="weapon.type" @change="syncWeaponAmmo(weapon)" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="weapon.type ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="item in weaponOptions" :key="item" :value="item">{{ cleanWeaponName(item) }}</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Заводський номер:</label>
+              <input type="text" v-model="weapon.serial" @input="uppercaseField(weapon, 'serial')" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Набої{{ index + 2 }}:</label>
+                <input type="text" :value="weapon.ammo || weaponAmmo(weapon.type)" readonly class="w-full p-2 rounded text-gray-300 border border-gray-700" style="background-color:var(--bg-field);" />
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість набоїв:</label>
+                <input type="number" min="0" step="1" v-model="weapon.ammoQty" @input="integerField(weapon, 'ammoQty')" placeholder="650" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Тепловізійний приціл до Зброї{{ index + 2 }}:</label>
+              <select v-model="weapon.thermal.present" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option value="відсутній">відсутній</option>
+                <option value="наявний">наявний</option>
+              </select>
+            </div>
+
+            <div v-if="weapon.thermal.present === 'наявний'" class="space-y-3 rounded-lg border border-gray-700 p-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex flex-col">
+                  <label class="mb-1 text-left">Виробник:</label>
+                  <input type="text" v-model="weapon.thermal.maker" placeholder="Pulsar" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+                </div>
+                <div class="flex flex-col">
+                  <label class="mb-1 text-left">Модель:</label>
+                  <input type="text" v-model="weapon.thermal.model" placeholder="Thermion 2 XP50 Pro" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+                </div>
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Заводський номер:</label>
+                <input type="text" v-model="weapon.thermal.serial" @input="uppercaseField(weapon.thermal, 'serial')" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Засіб прицілювання до Зброї{{ index + 2 }}:</label>
+              <select v-model="weapon.aim.type" @change="handleAimChange(weapon)" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option v-for="item in aimDevices" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+
+            <div v-if="weapon.aim.type !== 'відсутній' && weapon.aim.type !== 'ел.планшет'" class="flex flex-col">
+              <label class="mb-1 text-left">Заводський номер засобу прицілювання:</label>
+              <input type="text" v-model="weapon.aim.serial" @input="uppercaseField(weapon.aim, 'serial')" placeholder="00245" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-700 pb-1">
+            <h2 class="font-semibold text-gray-200">Стрілецька зброя 1-9</h2>
+            <button type="button" @click="addRifle" v-if="formData.rifles.length < 9" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <div v-for="(rifle, index) in formData.rifles" :key="rifle.id" class="space-y-3 rounded-lg border border-gray-700 p-3" style="background-color:var(--bg-section);">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold">Стрілецька зброя{{ index + 1 }}</h3>
+              <button type="button" @click="removeRifle(index)" v-if="formData.rifles.length > 1" class="btn-delete bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Стрілецька зброя{{ index + 1 }}:</label>
+              <select v-model="rifle.type" @change="syncRifleAmmo(rifle)" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="rifle.type ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="item in smallArmsOptions" :key="item.name" :value="item.name">{{ item.name }}</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість:</label>
+                <select v-model="rifle.qty" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="rifle.qty ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                  <option value="" disabled hidden>Оберіть кількість</option>
+                  <option v-for="n in range(1, 6)" :key="'rifleqty' + rifle.id + n" :value="String(n)">{{ n }}</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Набої до стр.зброї{{ index + 1 }}:</label>
+                <input type="text" :value="rifle.ammo || rifleAmmo(rifle.type)" readonly placeholder="Калібр підтягнеться автоматично" class="w-full p-2 rounded text-gray-300 border border-gray-700" style="background-color:var(--bg-field);" />
+              </div>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Кількість набоїв:</label>
+                <input type="number" min="0" step="1" v-model="rifle.ammoQty" @input="integerField(rifle, 'ammoQty')" placeholder="360" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">Оптика та спостереження</h2>
+
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Тепловізор ручний:</label>
+            <select v-model="formData.handThermal.present" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+              <option value="відсутній">відсутній</option>
+              <option value="наявний">наявний</option>
+            </select>
+          </div>
+
+          <div v-if="formData.handThermal.present === 'наявний'" class="space-y-3 rounded-lg border border-gray-700 p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Виробник:</label>
+                <input type="text" v-model="formData.handThermal.maker" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-left">Модель:</label>
+                <input type="text" v-model="formData.handThermal.model" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Заводський номер:</label>
+              <input type="text" v-model="formData.handThermal.serial" @input="uppercaseField(formData.handThermal, 'serial')" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex flex-col" v-for="item in countFields" :key="item.key">
+              <label class="mb-1 text-left">{{ item.label }}:</label>
+              <select v-model="formData[item.key]" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option v-for="n in range(0, 6)" :key="item.key + n" :value="String(n)">{{ n }}</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-700 pb-1">
+            <h2 class="font-semibold text-gray-200">Радіозв'язок</h2>
+            <button type="button" @click="addRadio" v-if="formData.radios.length < 3" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <div v-for="(radio, index) in formData.radios" :key="radio.id" class="grid grid-cols-12 gap-3 rounded-lg border border-gray-700 p-3">
+            <div class="col-span-6 sm:col-span-6 flex flex-col">
+              <label class="mb-1 text-left">Радіостанція{{ index + 1 }}:</label>
+              <select v-model="radio.model" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option v-for="item in radioModels" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex flex-col">
+              <label class="mb-1 text-left">Кількість:</label>
+              <select v-model="radio.qty" :disabled="radio.model === 'відсутній'" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-60" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>К-сть</option>
+                <option v-for="n in range(1, 10)" :key="'radio' + radio.id + n" :value="String(n)">{{ n }}</option>
+              </select>
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex items-end justify-end">
+              <button type="button" @click="removeRadio(index)" v-if="index > 0" class="btn-delete btn-delete-full bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">Засоби зв'язку, планшети, відео</h2>
+
+          <div class="grid grid-cols-1 gap-3">
+            <div class="flex flex-col" v-for="item in presenceCountFields" :key="item.key">
+              <label class="mb-1 text-left"><span v-html="item.labelHtml || item.label"></span>:</label>
+              <select v-model="formData[item.key]" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option value="відсутній">відсутній</option>
+                <option v-for="n in range(1, 6)" :key="item.key + n" :value="String(n)">{{ n }}</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-700 pb-1">
+            <h2 class="font-semibold text-gray-200">Інтернет на позиції</h2>
+            <button type="button" @click="addInternet" v-if="formData.internet.length < 2" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <div v-for="(net, index) in formData.internet" :key="net.id" class="grid grid-cols-12 gap-3 rounded-lg border border-gray-700 p-3">
+            <div class="col-span-6 sm:col-span-6 flex flex-col">
+              <label class="mb-1 text-left">Інтернет на позиції{{ index + 1 }}:</label>
+              <select v-model="net.type" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);">
+                <option v-for="item in internetTypes" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex flex-col">
+              <label class="mb-1 text-left">Кількість:</label>
+              <select v-model="net.qty" :disabled="net.type === 'відсутній'" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-60" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>К-сть</option>
+                <option v-for="n in range(1, 6)" :key="'net' + net.id + n" :value="String(n)">{{ n }}</option>
+              </select>
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex items-end justify-end">
+              <button type="button" @click="removeInternet(index)" v-if="index > 0" class="btn-delete btn-delete-full bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-700 pb-1">
+            <h2 class="font-semibold text-gray-200">Електроживлення</h2>
+            <button type="button" @click="addPower" v-if="formData.power.length < 3" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <div v-for="(power, index) in formData.power" :key="power.id" class="grid grid-cols-12 gap-3 rounded-lg border border-gray-700 p-3">
+            <div class="col-span-9 sm:col-span-9 flex flex-col">
+              <label class="mb-1 text-left">Ел.Живлення {{ powerLabel(index) }}:</label>
+              <select v-model="power.type" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="power.type ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть зі списку</option>
+                <option v-for="item in powerTypes" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex items-end justify-end">
+              <button type="button" @click="removePower(index)" v-if="index > 0" class="btn-delete btn-delete-full bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">Авто</h2>
+
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Марка модель:</label>
+            <input type="text" v-model="formData.vehicle.brand" @input="uppercaseField(formData.vehicle, 'brand')" placeholder="NISSAN NAVARA" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Приналежність:</label>
+              <select v-model="formData.vehicle.affiliation" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.vehicle.affiliation ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть</option>
+                <option v-for="item in vehicleAffiliations" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col">
+              <label class="mb-1 text-left">Номерний знак:</label>
+              <input type="text" v-model="formData.vehicle.plate" @input="uppercaseField(formData.vehicle, 'plate')" placeholder="4859Р8" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">Забезпечення та особовий склад</h2>
+
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Продукти отримано:</label>
+            <select v-model="formData.productsMode" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.productsMode ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+              <option value="" disabled hidden>Оберіть з варіантів</option>
+              <option value="date">Вкажіть дату отримання нижче</option>
+              <option value="ppd">Харчування в ППД</option>
+            </select>
+          </div>
+
+          <div v-if="formData.productsMode === 'date'" class="flex flex-col">
+            <label class="mb-1 text-left">Дата отримання продуктів:</label>
+            <input type="date" v-model="formData.productsDate" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="formData.productsDate ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);" />
+          </div>
+
+          <div class="flex items-center justify-between gap-2">
+            <label class="font-semibold">Особовий склад:</label>
+            <button type="button" @click="addPersonnel" class="bg-blue-800 hover:bg-blue-900 text-white rounded px-3 py-2 text-sm">Додати</button>
+          </div>
+
+          <div v-for="(person, index) in formData.personnel" :key="person.id" class="grid grid-cols-12 gap-3 rounded-lg border border-gray-700 p-3">
+            <p v-if="index === 0" class="col-span-12 sm:col-span-12 text-sm font-semibold text-yellow-200">Перший у списку — Старший розрахунку</p>
+            <div class="col-span-4 sm:col-span-4 flex flex-col">
+              <label class="mb-1 text-left">Звання:</label>
+              <select v-model="person.rank" class="w-full p-2 rounded border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" :class="person.rank ? 'text-gray-100' : 'text-gray-400'" style="background-color:var(--bg-field);">
+                <option value="" disabled hidden>Оберіть</option>
+                <option v-for="rank in ranks" :key="rank" :value="rank">{{ rank }}</option>
+              </select>
+            </div>
+            <div class="col-span-5 sm:col-span-5 flex flex-col">
+              <label class="mb-1 text-left">ПІБ:</label>
+              <input type="text" v-model="person.pib" placeholder="Залужний В.Ф." class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);" />
+            </div>
+            <div class="col-span-3 sm:col-span-3 flex items-end justify-end">
+              <button type="button" @click="removePersonnel(index)" v-if="formData.personnel.length > 1" class="btn-delete btn-delete-full bg-red-700 hover:bg-red-800 text-white rounded px-3 py-2 text-sm">Видалити</button>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="mb-1 text-left">Потреба в забезпечені:</label>
+            <textarea v-model="formData.needs" rows="3" class="w-full p-2 rounded text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700" style="background-color:var(--bg-field);"></textarea>
+          </div>
+
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <h2 class="font-semibold text-gray-200 border-b border-gray-700 pb-1">Попередній перегляд</h2>
+          <pre class="preview-box">{{ buildReport() }}</pre>
+        </section>
+
+        <section class="space-y-3 pt-2">
+          <div class="f-btn-row">
+            <button type="submit" class="f-btn-copy">Скопіювати</button>
+            <div class="f-btn-secondary-row">
+              <button type="button" @click="clearForm" class="f-btn-clear">Очистити форму</button>
+              <!-- Перемикає кольорову тему по колу (спільна для всіх трьох вкладок) -->
+              <button type="button" class="theme-btn f-btn-theme" onclick="cycleTheme()">◻ Нейтральна</button>
+            </div>
+          </div>
+        </section>
+      </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showTab(n) {
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById('tab-panel-' + i).style.display = (i === n) ? '' : 'none';
+        document.getElementById('tab-btn-' + i).classList.toggle('tab-btn-active', i === n);
+      }
+      try { localStorage.setItem('activeTabPreference', String(n)); } catch (e) {}
+    }
+
+    (function initTab() {
+      var saved = null;
+      try { saved = localStorage.getItem('activeTabPreference'); } catch (e) {}
+      var n = (saved === '1' || saved === '2' || saved === '3') ? parseInt(saved, 10) : 1;
+      showTab(n);
+    })();
+
+    var THEME_ORDER = ['palette-night', 'palette-sun', 'palette-pixel', 'palette-neutral'];
+    var THEME_LABELS = {
+      'palette-night': '🌙 Ніч',
+      'palette-sun': '☀️ Сонячний день',
+      'palette-pixel': '🫡 Піксель',
+      'palette-neutral': '◻ Нейтральна'
+    };
+
+    function applyTheme(theme) {
+      THEME_ORDER.forEach(function (t) { document.body.classList.remove(t); });
+      document.body.classList.add(theme);
+      document.querySelectorAll('.theme-btn').forEach(function (btn) {
+        btn.textContent = THEME_LABELS[theme];
+      });
+      try { localStorage.setItem('colorThemePreference', theme); } catch (e) {}
+    }
+
+    function cycleTheme() {
+      var current = THEME_ORDER.filter(function (t) { return document.body.classList.contains(t); })[0] || THEME_ORDER[0];
+      var idx = THEME_ORDER.indexOf(current);
+      var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+      applyTheme(next);
+    }
+
+    (function initTheme() {
+      var saved = null;
+      try { saved = localStorage.getItem('colorThemePreference'); } catch (e) {}
+      var theme = THEME_ORDER.indexOf(saved) !== -1 ? saved : 'palette-neutral';
+      applyTheme(theme);
+    })();
+
+    // =====================================================================
+    // ⚠️ РЕДАГУВАННЯ ТУТ — спільні списки для всіх трьох вкладок.
+    // Якщо додаєш новий підрозділ, область чи тип боєприпасу — заходь
+    // сюди, і зміна одразу застосується у всіх трьох формах.
+    // Просто додай/зміни рядок у лапках через кому, більше нічого
+    // редагувати не потрібно.
+    // =====================================================================
+    const SHARED_CONFIG = {
+      // Список підрозділів (спільний для всіх трьох вкладок).
+      units: [
+          'ПвК Центр',
+          '138 ртбр',
+          '164 ртбр',
+          '1 ртбр',
+          '39 зрп',
+          '156 зрп',
+          '223 зрп',
+          '225 зрп',
+          '1129 зрп',
+          '14 зрбр',
+          '96 зрбр',
+          '201 зрбр',
+          '302 зрбр',
+          '540 зрбр',
+          '1020 зрап',
+          '1025 зрап',
+          '1027 зрап',
+          '1121 зрап',
+          '1021 зап',
+          '15 брТрА',
+          '25 брТрА',
+          '456 брТрА',
+          '39 брта',
+          '40 брта',
+          '114 брта',
+          '831 брта',
+          '21 ак',
+          '110 ак',
+          '121 ак',
+          '31 опз та ртз',
+          '1163 бо',
+          'НГУ',
+          '1 брОП НГУ',
+          '2 обр НГУ',
+          '4 бр НГУ',
+          '16 оабр НГУ',
+          '19 об НГУ',
+          '21 обр НГУ',
+          '22 обр НГУ',
+          '27 обр НГУ',
+          '28 п НГУ',
+          '31 п НГУ',
+          '36 п НГУ',
+          '37 п НГУ',
+          '38 п НГУ',
+          '40 п НГУ',
+          '45 п НГУ',
+          '13 озкб',
+          '630 озкб',
+          '631 озкб',
+          '635 озкб',
+          '637 озкб',
+          '638 озкб',
+          '642 озкб',
+          '643 озкб',
+          '644 озкб',
+          '645 озкб',
+          '646 озкб',
+          '650 озкб',
+          '1 обр ТРО',
+          '102 обр ТРО',
+          '103 обр ТРО',
+          '104 обр ТРО',
+          '105 обр ТРО',
+          '106 обр ТРО',
+          '112 обр ТРО',
+          '114 обр ТРО',
+          '115 обр ТРО',
+          '116 обр ТРО',
+          '117 обр ТРО',
+          '118 обр ТРО',
+          '119 обр ТРО',
+          '120 обр ТРО',
+          '121 обр ТРО',
+          '127 обр ТРО',
+          '168 обр ТРО',
+          '321 обоо ТРО',
+          '376 обоо ТРО',
+          'ДФТГ',
+          '3 ПрикЗ',
+          '9 ПрикЗ',
+          '105 ПрикЗ',
+          'ДПСУ',
+          'НПУ',
+          'ГУР',
+          'ОПБр',
+          '101 обро ГШ',
+          '125 овмбр',
+          '172 брез',
+          '178 брез',
+          '72 омбр',
+          '210 ОШП',
+          '104 ОАБ',
+          '3 Арс АЗУ',
+          '12 Арс ІБ',
+          '48 Арс',
+          '62 Арс Озб',
+          '303 Арс',
+          '332 Арс РОБ',
+          '434 Арс',
+          '90 АББ',
+          '222 АББ',
+          '1322 АББ',
+          '6 АСБ',
+          '229 ОЦЗ',
+          '229 ОЦЗ',
+          '433 ОЦЗ ЗУ ОВТ',
+          '2183 ОЦЗ П',
+          '2320 ОЦЗ ВТМ',
+          '3343 ОЦЗ ВТМ',
+          '230 ОБЗ',
+          '232 ОБЗ',
+          '94 ЦЗП',
+          '3097 ЦЗП',
+          '17 БАТЗ',
+          '20 ОЦЛЗ',
+          '169 ПРТБ',
+          '1827 ЦАБО',
+          '2572 ОЦР ОВТ',
+        ],
+
+      // Список областей (спільний для всіх трьох вкладок).
+      regions: ['Вінницька', 'Житомирська', 'Кіровоградська', 'Київська', 'Одеська', 'Полтавська', 'Сумська', 'Черкаська', 'Чернігівська'],
+
+      // Список типів додаткової зброї (Зброя2/3) — тепер однаковий у вкладках
+      // "Щоденна доповідь" і "Стан та положення" (раніше форма "Стан та
+      // положення" мала на 9 типів ЗРК більше — синхронізовано на менший,
+      // явно вказаний список "Щоденної доповіді").
+      weaponOptions: [
+            'Browning M2 12.7', 'SAR 127 MT 12.7', 'Canik M2 12.7', 'НСВ Утьос 12.7', 
+            'ДШК 12.7', 'КПВТ 14.5', 'ЗКУ Viktor MR-2 14.5', 'ЗКУ-1(2) 14.5', 
+            'АЗГ М-75 20мм.', 'ЗУ М-55 20мм', 'ЗУ 23-2 23мм', 'ЗУ 23-4 Рокач (Шилка) 23мм', 
+            'ЗУ VZ-53/59 Praga 30мм', 'гармата HP 30мм',
+            'АЗГ L-70 Bofors 40мм.', 'АЗГ С-60 57мм', 'ЗСАУ Cheetah 35мм', 
+            'ЗСУ 1А2 Gepard 35мм', 'ЗСАУ 2С6 Тунгуска'
+          ],
+
+      // Таблиця відповідності зброя -> калібр/тип боєприпасу
+      // (спільна для вкладок "Щоденна доповідь" і "Стан та положення").
+      weaponAmmoMap: {
+            'Browning M2 12.7': '12,7х99 мм',
+            'SAR 127 MT 12.7': '12,7х99 мм',
+            'Canik M2 12.7': '12,7х99 мм',
+            'НСВ Утьос 12.7': '12,7х108 мм',
+            'ДШК 12.7': '12,7х108 мм',
+            'КПВТ 14.5': '14,5х114 мм',
+            'ЗКУ Viktor MR-2 14.5': '14,5х114 мм',
+            'ЗКУ-1(2) 14.5': '14,5х114 мм',
+            'АЗГ М-75 20мм.': '20 мм',
+            'ЗУ М-55 20мм': '20 мм',
+            'ЗУ 23-2 23мм': '23 мм',
+            'ЗУ 23-4 Рокач (Шилка) 23мм': '23 мм',
+            'ЗУ VZ-53/59 Praga 30мм': '30 мм',
+            'гармата HP 30мм': '30 мм',
+            'АЗГ L-70 Bofors 40мм.': '40 мм',
+            'АЗГ С-60 57мм': '57 мм',
+            'ЗСАУ Cheetah 35мм': '35 мм',
+            'ЗСУ 1А2 Gepard 35мм': '35 мм',
+            'ЗСАУ 2С6 Тунгуска': '30 мм',
+            'ЗРК RBS-70': 'ЗКР',
+            'ЗРК STASH': 'ЗКР',
+            'ЗРК DASH': 'ЗКР',
+            'ЗРК Raven': 'ЗКР',
+            'ЗРК Avanger': 'ЗКР',
+            'ЗРК Оса АКМ': 'ЗКР',
+            'ЗРК CA-95': 'ЗКР',
+            'ЗРК ITEL-1,5': 'ЗКР',
+            'ЗРК Rapid Ranger': 'ЗКР'
+          },
+
+      // Стрілецька зброя з калібром
+      // (спільна для вкладок "Щоденна доповідь" і "Стан та положення").
+      smallArmsOptions: [
+            { name: 'АК/РКК-5,45', ammo: '5,45х39 мм' },
+            { name: 'FNC', ammo: '5,56x45 мм' },
+            { name: 'АКМ/РКК-7,62', ammo: '7,62х39 мм' },
+            { name: 'ПКМ-7,62', ammo: '7,62х54 мм' }
+          ],
+
+      // Звання особового складу (повний запис)
+      // (спільні для вкладок "Щоденна доповідь" і "Стан та положення").
+      ranksFull: ['солдат', 'ст. солдат', 'мол. сержант', 'сержант', 'ст. сержант', 'головний сержант', 'штаб-сержант', 'майстер-сержант', 'молодший лейтенант', 'лейтенант', 'старший лейтенант', 'капітан', 'майор', 'підполковник', 'полковник']
+    };
+
+    try {
+    Vue.use(VueTheMask);
+
+    new Vue({
+      el: '#app-t1',
+
+      data: {
+        hexTokens: { 
+          A: { pattern: /[а-яА-ЯІіЇїЄєҐґ0-9 \-]/ }, 
+          B: { pattern: /[а-яА-ЯІіЇїЄєҐґ ]/, transform: v => v.toUpperCase() }
+        },
+
+        formData: {
+          pidrozdil: '',
+          pozivniyPrefix: '',
+          pozivniy: '',
+          naseleniyPunkt: '',
+          oblast: '',
+          date: '',
+          time: '',
+          weapons: [{ name: '' }],
+          targetNumber: '',
+          height: '',
+          result: '',
+          angle: '',
+          krok: '',
+          distance: '',
+          action: '',
+          targetCount: '',
+          targetClass: '',
+          type: '',
+          detectionMode: '',
+          rozxid: [{ type: '', quantity: null }],
+          personnel: [{ rank: '', pib: '' }],
+          explosionCount: '',
+          explosionPlace: '',
+          explosionStatus: '',
+          comment: ''
+        },
+
+        units: SHARED_CONFIG.units,
+
+        prefixes: ['МВГ', 'ВГ'],
+
+        regions: SHARED_CONFIG.regions,
+
+        weapons: [
+          'зі стрілецької зброї 5.45/5.56',
+          'зі стрілецької зброї 7.62',
+          'із ВКК Browning M2 12.7',
+          'із ВКК Canik M2 12.7',
+          'із ВКК SAR 127 MT 12.7',
+          'із НСВ Утьос 12.7',
+          'із ВКК ДШК 12.7',
+          'із ВКК КПВТ 14.5',
+          'із ЗКУ Viktor MR-2 14.5',
+          'із ЗКУ-1(2) 14.5',
+          'із АЗГ М-75 20мм.',
+          'із ЗУ М-55 20мм',
+          'із ЗУ 23-2 23мм',
+          'із ЗУ 23-4 Рокач (Шилка) 23мм',
+          'із ЗУ VZ-53/59 Praga 30мм',
+          'із гармати HP 30мм',
+          'із АЗГ L-70 Bofors 40мм.',
+          'із АЗГ С-60 57мм',
+          'із ЗСАУ Cheetah 35мм',
+          'із ЗСУ 1А2 Gepard 35мм',
+          'із ЗСАУ 2С6 Тунгуска',
+          'із ПЗРК RBS-70',
+          'із ПЗРК Ігла (Ігла-1)',
+          'із ПЗРК Stinger',
+          'із ПЗРК FN-6',
+          'із ПЗРК Piorun',
+          'із ПЗРК Стріла-3',
+          'із МОПУ Джигіт',
+          'із ЗРК RBS-70',
+          'із ЗРК STASH',
+          'із ЗРК DASH',
+          'із ЗРК Raven',
+          'із ЗРК Avanger',
+          'із ЗРК Оса АКМ',
+          'із ЗРК CA-95',
+          'із ЗРК ITEL-1,5', 
+          'із ЗРК Rapid Ranger'
+       ],
+
+        ammoTypes: [
+          'Розхід ЗКР', 
+          'Розхід НБЖ',
+          'Снаряд 57х348 мм (АЗГ С-60)',
+          'Снаряд 40х365 мм (L-70 Bofors)',
+          'Снаряд 35х228 мм (Gepard)',
+          'Снаряд 30х210 мм (VZ-53/59 Praga)',
+          'Снаряд 30х165 мм (2А38)',
+          'Снаряд 30х155 мм (HP-30)',
+          'Набій 23х152 мм (ЗУ-23-4(2))',
+          'Набій 20х110 мм (АЗГ М-75, M55)',
+          'Набій 14,5х114 мм (ЗПУ, КПВТ)',
+          'Набій 12,7х108 мм (ДШК, НСВ, Корд, W85)',
+          'Набій 12,7х99 мм (Canik, Browning)',
+          'Набій 7,62х54 мм (ПКМ, КМ-7,62, СВД)',
+          'Набій 7,62х51 мм (CZ TSR, MG3, MG42, FN MAG)',
+          'Набій 7,62х39 мм (РКК, РКД, АКМ)',
+          'Набій 5,56х45 мм (FNC)',
+          'Набій 5,45х39 мм'
+        ],
+
+        results: ['не застосовувалась', 'не знищено', 'ЗНИЩЕНО', 'вибух'],
+
+        actions: ['обстріляно', 'знищено'],
+
+        uavTypes: ['Shahed', 'Shahed (реактивний)','Гербера', 'Пародія', 'Ланцет', 'Бандероль','Невідомий'],
+
+        ranks: ['солд.', 'ст. солд.', 'мол. с-нт', 'с-нт', 'ст. с-нт', 'гол. с-нт', 'шт. с-нт', 'м. с-нт', 'мол. л-т', 'л-т', 'ст. л-т', 'к-н', 'м-р', 'п.п-к', 'п-к']
+      },
+
+      computed: {
+        showRozxid() {
+          return this.formData.result !== 'не застосовувалась' && this.formData.result !== 'вибух';
+        },
+
+        isNotDetectedDescription() {
+          return this.formData.result === 'не застосовувалась' &&
+            this.formData.detectionMode === 'акустично/візуально не виявлено';
+        },
+
+        showHeightField() {
+          return !this.isNotDetectedDescription;
+        }
+      },
+
+      created() {
+        const saved = localStorage.getItem('myFormData');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            this.formData = Object.assign(this.formData, parsed);
+            if (!Array.isArray(this.formData.weapons)) {
+              const oldWeapon = this.formData.zbroya || '';
+              this.formData.weapons = [{ name: oldWeapon }];
+              delete this.formData.zbroya;
+            }
+          } catch (e) {}
+        }
+      },
+
+      watch: {
+        formData: {
+          handler(newVal) {
+            localStorage.setItem('myFormData', JSON.stringify(newVal));
+          },
+          deep: true
+        },
+
+        'formData.pozivniy': {
+          handler(newVal) {
+            if (newVal && newVal.charAt(0) !== newVal.charAt(0).toUpperCase()) {
+              this.formData.pozivniy = newVal.charAt(0).toUpperCase() + newVal.slice(1);
+            }
+          },
+          deep: true
+        },
+
+        'formData.targetClass'(newVal) {
+          if (newVal === 'КР') {
+            this.formData.type = '';
+          } else if (!this.formData.type) {
+            this.formData.type = this.uavTypes[0];
+          }
+        },
+
+        'formData.result'(newVal) {
+          if (newVal === 'вибух') {
+            this.formData.height = '';
+            this.formData.krok = '';
+          }
+        }
+      },
+
+      methods: {
+        addRozxid() {
+          this.formData.rozxid.push({ type: '', quantity: null });
+        },
+
+        removeRozxid(index) {
+          this.formData.rozxid.splice(index, 1);
+        },
+
+        addPersonnel() {
+          this.formData.personnel.push({ rank: '', pib: '' });
+        },
+
+        removePersonnel(index) {
+          this.formData.personnel.splice(index, 1);
+        },
+
+        addWeapon() {
+          this.formData.weapons.push({ name: '' });
+        },
+
+        removeWeapon(index) {
+          if (this.formData.weapons.length > 1) {
+            this.formData.weapons.splice(index, 1);
+          }
+        },
+
+        clearForm() {
+          this.formData = {
+            pidrozdil: '',
+            pozivniyPrefix: '',
+            pozivniy: '',
+            naseleniyPunkt: '',
+            oblast: '',
+            date: '',
+            time: '',
+            weapons: [{ name: '' }],
+            targetNumber: '',
+            height: '',
+            result: '',
+            angle: '',
+            krok: '',
+            distance: '',
+            action: '',
+            targetCount: '',
+            targetClass: '',
+            type: '',
+            detectionMode: '',
+            rozxid: [{ type: '', quantity: null }],
+            personnel: [{ rank: '', pib: '' }],
+            explosionCount: '',
+            explosionPlace: '',
+            explosionStatus: '',
+            comment: ''
+          };
+          localStorage.removeItem('myFormData');
+        },
+
+        // Формує текст доповіді для показу в блоці попереднього перегляду.
+        // ВАЖЛИВО: ця функція нічого не записує назад у formData (на
+        // відміну від copyData нижче) — інакше поля форми показували б "0"
+        // ще до того, як користувач взагалі почав вводити дані.
+        buildReport() {
+          const isNotDetectedDescription = this.formData.result === 'не застосовувалась' &&
+            this.formData.detectionMode === 'акустично/візуально не виявлено';
+
+          let angle = this.formData.angle;
+          let distance = this.formData.distance;
+          let height = this.formData.height;
+          let krok = this.formData.krok;
+          if (!isNotDetectedDescription) {
+            angle = angle || '0';
+            distance = distance || '0';
+            height = height || '0';
+            krok = krok || '0';
+          }
+          let targetNumber = this.formData.targetNumber || '0000';
+
+          if (this.formData.result === 'вибух' && this.formData.explosionPlace === 'на землі') {
+            height = '0';
+          }
+
+          const formatDate = (dateStr) => {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const [yyyy, mm, dd] = parts;
+            return `${dd}.${mm}.${yyyy}`;
+          };
+
+          const formattedDate = formatDate(this.formData.date);
+
+          let targetNumberDisplay = targetNumber;
+          if (!targetNumberDisplay || /^0+$/.test(targetNumberDisplay)) {
+            targetNumberDisplay = 'б/н';
+          }
+
+          let resultText = this.formData.result || '';
+          let oblastShort = this.formData.oblast || '';
+
+          const weaponsSelected = (this.formData.weapons || [])
+            .map(w => w && w.name ? w.name : '')
+            .filter(Boolean);
+          const weaponsLine = weaponsSelected.join(', ');
+
+          const ammoSummary = (items) => {
+            const regexNabiy = /^(Набій|Снаряд)\s(.+)$/;
+            const grouped = {};
+            let zkr = 0;
+            let nbzh = 0;
+
+            items.forEach(item => {
+              const line = item.type;
+              const qty = parseInt(item.quantity, 10);
+              if (!line || isNaN(qty)) return;
+
+              if (line.startsWith('Розхід ЗКР')) {
+                zkr += qty;
+              } else if (line.startsWith('Розхід НБЖ')) {
+                nbzh += qty;
+              } else {
+                const match = line.match(regexNabiy);
+                if (match) {
+                  const kind = match[1];
+                  const name = match[2];
+                  const key = `${kind} ${name}`;
+                  if (!grouped[key]) grouped[key] = 0;
+                  grouped[key] += qty;
+                }
+              }
+            });
+
+            const lines = [];
+            Object.entries(grouped).forEach(([key, qty]) => {
+              lines.push(`${key} - ${qty}`);
+            });
+            if (zkr > 0) lines.push(`Розхід ЗКР - ${zkr}`);
+            if (nbzh > 0) lines.push(`Розхід НБЖ - ${nbzh}`);
+            return lines;
+          };
+
+          let text = `Дата: ${formattedDate}
+Час: ${this.formData.time || ''}
+№ цілі: ${targetNumberDisplay}
+Результат: ${resultText}
+Н.П.: ${this.formData.naseleniyPunkt}
+Обл.: ${oblastShort}
+Підрозділ: ${this.formData.pidrozdil}
+Позивний: ${this.formData.pozivniyPrefix} ${this.formData.pozivniy}
+Зброя: ${weaponsLine}`;
+
+          if (!isNotDetectedDescription) {
+            text += `
+Висота: ${height}`;
+          }
+
+          if (this.formData.result === 'вибух') {
+            const vibukhWord = Number(this.formData.explosionCount) > 1 ? 'вибухи' : 'вибух';
+            text += `\nОпис: А-${angle}, Д-${distance} ${vibukhWord} ${this.formData.explosionCount} ${this.formData.explosionPlace} ${this.formData.explosionStatus}`;
+          } else if (this.formData.result === 'не застосовувалась') {
+            if (isNotDetectedDescription) {
+              text += `\nОпис: ${this.formData.detectionMode}`;
+            } else {
+              text += `\nОпис: А-${angle}, Д-${distance}, К-${krok}`;
+              if (this.formData.detectionMode) text += `, ${this.formData.detectionMode}`;
+              if (this.formData.targetCount) text += ` ${this.formData.targetCount}`;
+              if (this.formData.targetClass) text += ` ${this.formData.targetClass}`;
+              if (this.formData.targetClass === 'БПЛА' && this.formData.type) {
+                text += ` ${this.formData.type}`;
+              }
+            }
+          } else {
+            text += `\nОпис: А-${angle}, Д-${distance}, К-${krok}`;
+            if (this.formData.result === 'не знищено') {
+              text += `, обстріляно`;
+            } else if (this.formData.result === 'ЗНИЩЕНО') {
+              text += `, ЗНИЩЕНО`;
+            } else if (this.formData.action) {
+              text += `, ${this.formData.action}`;
+            }
+            if (this.formData.targetCount) text += ` ${this.formData.targetCount}`;
+            if (this.formData.targetClass) text += ` ${this.formData.targetClass}`;
+            if (this.formData.targetClass === 'БПЛА' && this.formData.type) {
+              text += ` ${this.formData.type}`;
+            }
+          }
+
+          const personnel = this.formData.personnel
+            .filter(p => p.rank && p.pib)
+            .map(p => `${p.rank} ${p.pib}`)
+            .join(', ');
+          if (personnel) text += `, ${personnel}`;
+
+          const commentText = this.formData.comment && this.formData.comment.trim()
+            ? this.formData.comment.trim()
+            : '-';
+          text += `\nКоментар: ${commentText}`;
+
+          if (this.showRozxid) {
+            const ammoLines = ammoSummary(this.formData.rozxid);
+            ammoLines.forEach(line => {
+              text += `\n${line}`;
+            });
+          }
+
+          text = text
+            .split('\n')
+            .map(line => line.trimStart())
+            .join('\n');
+
+          return text;
+        },
+
+        // Кнопка "Скопіювати": спершу (як і раніше) підставляє значення за
+        // замовчуванням у порожні поля (щоб користувач бачив підтвердження
+        // "0" у самій формі після копіювання), потім бере готовий текст із
+        // buildReport() і кладе його в буфер обміну.
+        copyData() {
+          const isNotDetectedDescription = this.formData.result === 'не застосовувалась' &&
+            this.formData.detectionMode === 'акустично/візуально не виявлено';
+
+          if (!isNotDetectedDescription) {
+            this.formData.angle = this.formData.angle || '0';
+            this.formData.distance = this.formData.distance || '0';
+            this.formData.height = this.formData.height || '0';
+            this.formData.krok = this.formData.krok || '0';
+          }
+          this.formData.targetNumber = this.formData.targetNumber || '0000';
+
+          if (this.formData.result === 'вибух' && this.formData.explosionPlace === 'на землі') {
+            this.formData.height = '0';
+          }
+
+          const text = this.buildReport();
+          navigator.clipboard.writeText(text).then(() => alert("Дані скопійовано!"));
+        },
+
+        onAngleInput(e) {
+          let val = Number(e.target.value);
+          if (val > 360) val = 360;
+          if (val < 0) val = 0;
+          this.formData.angle = val ? String(val) : '';
+        },
+
+        onKrokInput(e) {
+          let val = Number(e.target.value);
+          if (val > 360) val = 360;
+          if (val < 0) val = 0;
+          this.formData.krok = val ? String(val) : '';
+        }
+      }
+    });
+
+    } catch (e) { console.error('Не вдалося запустити форму "Застосування":', e); }
+
+    try {
+    new Vue({
+      // el вказує, яким HTML-блоком керує Vue.
+      el: '#app-t2',
+      // data() повертає всі основні дані форми і списки для випадаючих меню.
+      data: function () {
+        return {
+          // Ключ для localStorage. За ним браузер зберігає чернетку форми.
+          storageKey: 'dailySimpleReportFormData',
+          // Список підрозділів.
+          units: SHARED_CONFIG.units,
+          // Список областей.
+          regions: SHARED_CONFIG.regions,
+          // Варіанти для поля ПЗРК/ЗРК.
+          pzrkOptions: ['відсутній', 'Ігла', 'Ігла-1', 'Stinger', 'FN-6', 'Piorun', 
+          'Стріла-3', 'Джигіт', 'ЗРК RBS-70', 'ЗРК STASH', 'ЗРК DASH', 'ЗРК Raven', 
+          'ЗРК Avanger', 'ЗРК Оса АКМ', 'ЗРК CA-95', 'ЗРК ITEL-1,5', 'ЗРК Rapid Ranger'],
+          // Варіанти додаткової зброї. Частина назви містить калібр для автоматичного визначення БК.
+          weaponOptions: SHARED_CONFIG.weaponOptions,
+          // Таблиця відповідності: тип зброї -> калібр/тип боєприпасу.
+          weaponAmmoMap: SHARED_CONFIG.weaponAmmoMap,
+          // Список стрілецької зброї разом із калібром.
+          smallArmsOptions: SHARED_CONFIG.smallArmsOptions,
+          // Список звань для старшого розрахунку.
+          ranks: SHARED_CONFIG.ranksFull,
+          // formData — головний об'єкт із поточними значеннями всіх полів форми.
+          formData: null
+        };
+      },
+      /*
+        computed — обчислювані значення.
+        Вони не вводяться вручну, а автоматично рахуються з інших полів.
+      */
+      computed: {
+        // Якщо вибрано "інша", беремо вручну введений підрозділ; інакше — вибраний зі списку.
+        selectedUnit: function () {
+          return this.formData.unit === 'інша' ? this.formData.unitOther : this.formData.unit;
+        },
+        // Тип розрахунку: якщо є авто — МВГ, якщо авто немає — ВГ.
+        calculationType: function () {
+          var vehicle = this.formData && this.formData.vehicle ? this.formData.vehicle : {};
+          var brand = vehicle.brand ? vehicle.brand.trim() : '';
+          return brand ? 'МВГ' : 'ВГ';
+        }
+      },
+      // created() запускається автоматично при відкритті сторінки.
+      // Тут форма відновлює збережені раніше дані з localStorage.
+      created: function () {
+        var saved = localStorage.getItem(this.storageKey);
+        if (saved) {
+          try {
+            this.formData = this.mergeDefaults(this.emptyForm(), JSON.parse(saved));
+            this.repairIds();
+          } catch (e) {
+            this.formData = this.emptyForm();
+            this.repairIds();
+          }
+        } else {
+          this.formData = this.emptyForm();
+          this.repairIds();
+        }
+      },
+      /*
+        watch — спостерігачі за змінами.
+        Вони реагують, коли певні дані змінилися.
+      */
+      watch: {
+        // Кожна зміна formData автоматично зберігається в localStorage.
+        formData: {
+          handler: function (newVal) {
+            localStorage.setItem(this.storageKey, JSON.stringify(newVal));
+          },
+          deep: true
+        },
+        // Якщо змінився підрозділ, чистимо поля, які вже не потрібні.
+        'formData.unit': function (value) {
+          if (value !== 'інша') this.formData.unitOther = '';
+        }
+      },
+      /*
+        methods — функції форми.
+        Вони запускаються з кнопок, подій введення або під час формування доповіді.
+      */
+      methods: {
+        // Повертає чисту форму зі значеннями за замовчуванням.
+        emptyForm: function () {
+          return {
+            date: '',
+            unit: '',
+            unitOther: '',
+            callSign: '',
+            settlement: '',
+            oblast: '',
+            pzrk: { type: 'відсутній', zkr: '', nbzh: '' },
+            weapons: [],
+            rifles: [this.newRifle()],
+            vehicle: this.emptyVehicle(),
+            productsMode: '',
+            productsDate: '',
+            senior: { rank: '', pib: '' },
+            needs: ''
+          };
+        },
+        // Повертає порожній блок авто.
+        emptyVehicle: function () {
+          return { enabled: false, brand: '', fuel: '', fuelLeft: '' };
+        },
+        // Генерує унікальний id для блоків, які додаються кнопками.
+        newId: function () {
+          return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        },
+        // Створює новий порожній блок додаткової зброї.
+        newWeapon: function () {
+          return { id: this.newId(), type: '', ammo: '', ammoQty: '' };
+        },
+        // Створює новий порожній блок стрілецької зброї.
+        newRifle: function () {
+          return { id: this.newId(), type: '', qty: '', ammo: '', ammoQty: '' };
+        },
+        // Об'єднує старі збережені дані з новою структурою форми.
+        // Це потрібно, щоб після оновлення файлу старі збережені чернетки не ламали форму.
+        mergeDefaults: function (defaults, saved) {
+          var result = Array.isArray(defaults) ? [] : {};
+          Object.keys(defaults).forEach(function (key) {
+            if (Array.isArray(defaults[key])) {
+              result[key] = Array.isArray(saved[key]) ? saved[key] : defaults[key];
+            } else if (defaults[key] && typeof defaults[key] === 'object') {
+              result[key] = this.mergeDefaults(defaults[key], saved[key] || {});
+            } else {
+              result[key] = saved[key] !== undefined ? saved[key] : defaults[key];
+            }
+          }, this);
+          return result;
+        },
+        // Виправляє дані після завантаження: додає id, перевіряє масиви, чистить НБЖ для ЗКР/ЗРК.
+        repairIds: function () {
+          if (!Array.isArray(this.formData.weapons)) this.formData.weapons = [];
+          if (!Array.isArray(this.formData.rifles) || this.formData.rifles.length === 0) this.formData.rifles = [this.newRifle()];
+          if (!this.formData.vehicle) this.formData.vehicle = this.emptyVehicle();
+          if (this.formData.vehicle.enabled === undefined) {
+            this.formData.vehicle.enabled = !!(this.formData.vehicle.brand || this.formData.vehicle.fuel || this.formData.vehicle.fuelLeft);
+          }
+          if (this.formData.pzrk && this.isZrkType(this.formData.pzrk.type)) this.formData.pzrk.nbzh = '';
+          var validProductsModes = ['date', 'ppd'];
+          if (validProductsModes.indexOf(this.formData.productsMode) === -1) this.formData.productsMode = '';
+          if (this.formData.productsMode === 'date' && !this.formData.productsDate) this.formData.productsMode = '';
+          ['weapons', 'rifles'].forEach(function (list) {
+            (this.formData[list] || []).forEach(function (item) {
+              if (!item.id) item.id = this.newId();
+            }, this);
+          }, this);
+        },
+        // Створює масив чисел від from до to. Використовується для випадаючих списків кількості.
+        range: function (from, to) {
+          var arr = [];
+          for (var i = from; i <= to; i++) arr.push(i);
+          return arr;
+        },
+        // Нормалізує позивний: прибирає заборонені символи, робить першу літеру великою.
+        normalizeCallSign: function () {
+          var value = this.formData.callSign || '';
+          value = value.replace(/[^а-яА-ЯіІїЇєЄґҐ0-9 \-]/g, '').replace(/\s+/g, ' ');
+          value = value.toLocaleLowerCase('uk-UA');
+          this.formData.callSign = value ? value.charAt(0).toLocaleUpperCase('uk-UA') + value.slice(1) : '';
+        },
+        // Нормалізує населений пункт: залишає українські літери і переводить у верхній регістр.
+        normalizeSettlement: function () {
+          var value = this.formData.settlement || '';
+          this.formData.settlement = value.replace(/[^а-яА-ЯіІїЇєЄґҐ \-]/g, '').toLocaleUpperCase('uk-UA');
+        },
+        // Переводить конкретне поле об'єкта у верхній регістр.
+        uppercaseField: function (obj, key) {
+          obj[key] = (obj[key] || '').toString().toLocaleUpperCase('uk-UA');
+        },
+        // Залишає в полі тільки цифри.
+        integerField: function (obj, key) {
+          obj[key] = (obj[key] || '').toString().replace(/\D/g, '');
+        },
+        // Окрема перевірка залишку пального: тільки цифри, максимум 4 символи.
+        fuelLeftField: function () {
+          this.formData.vehicle.fuelLeft = (this.formData.vehicle.fuelLeft || '').toString().replace(/\D/g, '').slice(0, 4);
+        },
+        // Визначає, чи вибраний тип є ЗКР/ЗРК.
+        // Якщо перші 3 літери "ЗКР" або "ЗРК", поле НБЖ не потрібне.
+        isZrkType: function (type) {
+          var value = (type || '').toString().trim().toLocaleUpperCase('uk-UA');
+          return value.slice(0, 3) === 'ЗКР' || value.slice(0, 3) === 'ЗРК';
+        },
+        // Реакція на зміну ПЗРК/ЗРК: чистить кількість, якщо вибрано "відсутній", і прибирає НБЖ для ЗКР/ЗРК.
+        handlePzrkChange: function () {
+          if (this.formData.pzrk.type === 'відсутній') {
+            this.formData.pzrk.zkr = '';
+            this.formData.pzrk.nbzh = '';
+          }
+          if (this.isZrkType(this.formData.pzrk.type)) this.formData.pzrk.nbzh = '';
+        },
+        // Показує блок авто.
+        addVehicle: function () {
+          if (!this.formData.vehicle) this.formData.vehicle = this.emptyVehicle();
+          this.formData.vehicle.enabled = true;
+        },
+        // Видаляє блок авто й очищає його поля.
+        removeVehicle: function () {
+          this.formData.vehicle = this.emptyVehicle();
+        },
+        // Додає блок додаткової зброї, якщо їх менше двох.
+        addWeapon: function () {
+          if (this.formData.weapons.length < 2) this.formData.weapons.push(this.newWeapon());
+        },
+        // Видаляє додаткову зброю за її номером у списку.
+        removeWeapon: function (index) {
+          this.formData.weapons.splice(index, 1);
+        },
+        // Додає другий блок стрілецької зброї.
+        addRifle: function () {
+          if (this.formData.rifles.length < 2) this.formData.rifles.push(this.newRifle());
+        },
+        // Видаляє блок стрілецької зброї, але перший блок залишає завжди.
+        removeRifle: function (index) {
+          if (this.formData.rifles.length > 1) this.formData.rifles.splice(index, 1);
+        },
+        // Записує калібр у блок додаткової зброї після вибору типу.
+        syncWeaponAmmo: function (weapon) {
+          weapon.ammo = this.weaponAmmo(weapon.type);
+        },
+        // Записує калібр у блок стрілецької зброї після вибору типу.
+        syncRifleAmmo: function (rifle) {
+          rifle.ammo = this.rifleAmmo(rifle.type);
+        },
+        // Повертає калібр/БК для додаткової зброї.
+        weaponAmmo: function (type) {
+          return this.weaponAmmoMap[type] || '';
+        },
+        // Повертає калібр для стрілецької зброї.
+        rifleAmmo: function (type) {
+          var found = this.smallArmsOptions.find(function (item) { return item.name === type; });
+          return found ? found.ammo : '';
+        },
+        // Прибирає калібр із назви зброї для красивого виведення у доповіді.
+        // Наприклад "Browning M2 12.7" у доповіді стане "Browning M2".
+        cleanWeaponName: function (name) {
+          return (name || '')
+            .replace(/\s+12\.7$/, '')
+            .replace(/\s+14\.5$/, '')
+            .replace(/\s+20мм\.?$/, '')
+            .replace(/\s+23мм$/, '')
+            .replace(/\s+30мм$/, '')
+            .replace(/\s+35мм$/, '')
+            .replace(/\s+40мм\.?$/, '')
+            .replace(/\s+57мм$/, '');
+        },
+        // Перетворює дату з формату браузера YYYY-MM-DD у звичний DD.MM.YYYY.
+        formatDate: function (dateStr) {
+          if (!dateStr) return '';
+          var parts = dateStr.split('-');
+          if (parts.length !== 3) return dateStr;
+          return parts[2] + '.' + parts[1] + '.' + parts[0];
+        },
+        // Формує рядок про продукти: або дата, або "харчування в ППД".
+        productsLine: function () {
+          if (!this.formData.productsMode) return '';
+          if (this.formData.productsMode === 'ppd') return 'харчування в ППД';
+          return this.formatDate(this.formData.productsDate);
+        },
+        // Повертає назву авто без зайвих пробілів.
+        vehicleLine: function () {
+          return (this.formData.vehicle && this.formData.vehicle.brand ? this.formData.vehicle.brand : '').trim();
+        },
+        // Головна функція: збирає всі поля форми в готовий текст доповіді.
+        buildReport: function () {
+          if (!this.formData) return '';
+          var f = this.formData;
+
+          // lines — масив рядків. Наприкінці вони з'єднаються через перенос рядка.
+          var lines = [];
+
+          lines.push('Дата: ' + this.formatDate(f.date));
+          lines.push('Підрозділ: ' + (this.selectedUnit || ''));
+          lines.push('Позивний: ' + this.calculationType + (f.callSign ? ' ' + f.callSign : ''));
+          lines.push('Н.П.: ' + (f.settlement || ''));
+          lines.push('Область: ' + (f.oblast || ''));
+
+          // Блок ПЗРК/ЗРК: якщо відсутній — пишемо "відсутній"; інакше додаємо тип і кількість.
+          if (f.pzrk.type === 'відсутній') {
+            lines.push('ПЗРК/ЗРК: відсутній');
+          } else {
+            var pzrkCountsList = [f.pzrk.zkr];
+            if (!this.isZrkType(f.pzrk.type)) pzrkCountsList.push(f.pzrk.nbzh);
+            var pzrkCounts = pzrkCountsList.filter(Boolean).join('/');
+            lines.push('ПЗРК/ЗРК: ' + f.pzrk.type + (pzrkCounts ? ' - ' + pzrkCounts : ''));
+          }
+
+          // Додаємо в доповідь усі заповнені блоки додаткової зброї.
+          f.weapons.forEach(function (weapon, index) {
+            if (!weapon.type) return;
+            lines.push('Зброя' + (index + 2) + ': ' + this.cleanWeaponName(weapon.type));
+            lines.push('БК: ' + (weapon.ammo || this.weaponAmmo(weapon.type)) + ' - ' + (weapon.ammoQty || '0'));
+          }, this);
+
+          // Додаємо в доповідь усі заповнені блоки стрілецької зброї.
+          f.rifles.forEach(function (rifle) {
+            if (!rifle.type) return;
+            lines.push('Стр. зброя: ' + rifle.type + ' - ' + (rifle.qty || '0'));
+            lines.push('БК: ' + (rifle.ammo || this.rifleAmmo(rifle.type)) + ' - ' + (rifle.ammoQty || '0'));
+          }, this);
+
+          // Авто потрапляє в доповідь тільки якщо введена марка/модель.
+          var hasVehicle = !!this.vehicleLine();
+          if (hasVehicle) {
+            lines.push('Авто: ' + this.vehicleLine());
+            var fuelBalance = f.vehicle.fuel && f.vehicle.fuelLeft
+              ? f.vehicle.fuel + '-' + f.vehicle.fuelLeft
+              : (f.vehicle.fuel || f.vehicle.fuelLeft || '');
+            if (fuelBalance) lines.push('Залишок пального л.: ' + fuelBalance);
+          }
+          lines.push('Продукти отримано: ' + this.productsLine());
+          lines.push('Старший розрахунку: ' + [f.senior.rank, f.senior.pib].filter(Boolean).join(' '));
+          lines.push('Потреба в забезпечені: ' + (f.needs || ''));
+
+          return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        },
+        // Копіює готовий текст доповіді в буфер обміну.
+        copyData: function () {
+          var text = this.buildReport();
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function () {
+              alert('Доповідь скопійовано');
+            }).catch(function () {
+              this.fallbackCopy(text);
+            }.bind(this));
+          } else {
+            this.fallbackCopy(text);
+          }
+        },
+        // Запасний спосіб копіювання для старих браузерів або локальних файлів.
+        fallbackCopy: function (text) {
+          var textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'absolute';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            alert('Доповідь скопійовано');
+          } catch (e) {
+            alert('Не вдалося скопіювати. Скопіюйте текст вручну.');
+          }
+          document.body.removeChild(textarea);
+        },
+        // Повністю очищає форму і видаляє збережену чернетку з localStorage.
+        clearForm: function () {
+          this.formData = this.emptyForm();
+          localStorage.removeItem(this.storageKey);
+        }
+      }
+    });
+
+    } catch (e) { console.error('Не вдалося запустити форму "Щоденна доповідь":', e); }
+
+    try {
+    Vue.use(VueTheMask);
+
+    new Vue({
+      el: '#app-t3',
+      data: function () {
+        return {
+          storageKey: 'logisticsReportFormData',
+          units: SHARED_CONFIG.units,
+          regions: SHARED_CONFIG.regions,
+          districts: {
+            'Вінницька': ['Вінницький', 'Гайсинський', 'Жмеринський', 'Могилів-Подільський', 'Тульчинський', 'Хмільницький'],
+            'Житомирська': ['Бердичівський', 'Житомирський', 'Звягельський', 'Коростенський'],
+            'Кіровоградська': ['Голованівський', 'Кропивницький', 'Новоукраїнський', 'Олександрійський'],
+            'Київська': ['Білоцерківський', 'Бориспільський', 'Броварський', 'Бучанський', 'Вишгородський', 'Обухівський', 'Фастівський'],
+            'Одеська': ['Березівський', 'Білгород-Дністровський', 'Болградський', 'Ізмаїльський', 'Одеський', 'Подільський', 'Роздільнянський'],
+            'Полтавська': ['Кременчуцький', 'Лубенський', 'Миргородський', 'Полтавський'],
+            'Сумська': ['Конотопський', 'Охтирський', 'Роменський', 'Сумський', 'Шосткинський'],
+            'Черкаська': ['Звенигородський', 'Золотоніський', 'Уманський', 'Черкаський'],
+            'Чернігівська': ['Корюківський', 'Ніжинський', 'Новгород-Сіверський', 'Прилуцький', 'Чернігівський']
+          },
+          pzrkOptions: ['відсутній', 'RBS-70', 'Ігла (Ігла-1)', 'Stinger', 'FN-6', 'Piorun', 'Стріла-3', 'Джигіт'],
+          weaponOptions: SHARED_CONFIG.weaponOptions,
+          weaponAmmoMap: SHARED_CONFIG.weaponAmmoMap,
+          smallArmsOptions: SHARED_CONFIG.smallArmsOptions,
+          aimDevices: ['відсутній', 'Skylock', 'SkySentinel', 'ел.планшет'],
+          radioModels: ['відсутній', 'Motorola DP4400', 'Motorola DP4600', 'Motorola DP4800', 'Motorola DM4400', 'Motorola DM4600',
+          'Motorola XiR P8668', 'Motorola T-80', 'Motorola APX 900', 'Motorola APX 4000', 'Motorola DP-R7A',
+           'AnyTone AT-D878UVII Plus', 'Либідь', 'Baofeng BF-8885', 'Wouxun', 'Hytera', 'УКХ рація', 'Harris', 'Kenwood NX-320'],
+          internetTypes: ['відсутній', 'Starlink', 'LTE-модем', '3G-модем', 'мобільний'],
+          powerTypes: ['пром.мережа', 'генератор', 'АКБ'],
+          vehicleTypes: ['пікап', 'бус', 'кросовер'],
+          vehicleAffiliations: ['військовий', 'волонтерський', 'особистий'],
+          ranks: SHARED_CONFIG.ranksFull,
+          countFields: [
+            { key: 'nvg', label: 'Прилад нічного бачення' },
+            { key: 'binocular', label: 'Бінокль' },
+            { key: 'spotlight', label: 'Прожектор' },
+            { key: 'laser', label: 'Лазерний вказівник' }
+          ],
+          presenceCountFields: [
+            { key: 'smartphoneNoVirazh', label: 'Смартфон робочий використовується НЕ для Віража', labelHtml: 'Смартфон робочий використовується <span class="label-red">НЕ</span> для Віража' },
+            { key: 'smartphoneVirazh', label: 'Смартфон робочий використовується ДЛЯ Віража', labelHtml: 'Смартфон робочий використовується <span class="label-green">ДЛЯ</span> Віража' },
+            { key: 'tabletNoVirazh', label: 'Електронний планшет використовується НЕ для Віража чи наведення', labelHtml: 'Електронний планшет використовується <span class="label-red">НЕ</span> для Віража чи наведення' },
+            { key: 'tabletVirazh', label: 'Електронний планшет використовується ДЛЯ Віража', labelHtml: 'Електронний планшет використовується <span class="label-green">ДЛЯ</span> Віража' },
+            { key: 'gopro', label: 'Засіб відеофіксації (Go-PRO)' }
+          ],
+          formData: null
+        };
+      },
+      computed: {
+        districtsForSelected: function () {
+          return this.districts[this.formData.oblast] || [];
+        },
+        calculationType: function () {
+          return this.formData.vehicle && this.formData.vehicle.affiliation === 'військовий' ? 'МВГ' : 'ВГ';
+        }
+      },
+      created: function () {
+        var saved = localStorage.getItem(this.storageKey);
+        if (saved) {
+          try {
+            var parsed = JSON.parse(saved);
+            this.formData = this.mergeDefaults(this.emptyForm(), parsed);
+            this.repairIds();
+          } catch (e) {
+            this.formData = this.emptyForm();
+            this.repairIds();
+          }
+        } else {
+          this.formData = this.emptyForm();
+          this.repairIds();
+        }
+      },
+      watch: {
+        formData: {
+          handler: function (newVal) {
+            localStorage.setItem(this.storageKey, JSON.stringify(newVal));
+          },
+          deep: true
+        },
+        'formData.oblast': function () {
+          if (this.formData.district && this.districtsForSelected.indexOf(this.formData.district) === -1) {
+            this.formData.district = '';
+          }
+        },
+        'formData.productsMode': function (value) {
+          if (value !== 'date') this.formData.productsDate = '';
+        }
+      },
+      methods: {
+        emptyForm: function () {
+          return {
+            date: '', unit: '', company: '', callSign: '', settlement: '', oblast: '', district: '',
+            pzrk: { type: 'відсутній', serial: '', zkr: '', nbzh: '', mount: '', thermal: 'ні', thermalMaker: '', thermalModel: '', thermalSerial: '' },
+            weapons: [],
+            rifles: [this.newRifle()],
+            handThermal: { present: 'відсутній', maker: '', model: '', serial: '' },
+            nvg: '0', binocular: '0', spotlight: '0', laser: '0',
+            radios: [this.newRadio()],
+            smartphoneNoVirazh: 'відсутній', smartphoneVirazh: 'відсутній', tabletNoVirazh: 'відсутній', tabletVirazh: 'відсутній', gopro: 'відсутній',
+            internet: [this.newInternet()],
+            power: [this.newPower()],
+            vehicle: { type: '', brand: '', affiliation: '', plate: '' },
+            productsMode: '', productsDate: '', personnel: [this.newPerson()], needs: ''
+          };
+        },
+        newId: function () {
+          return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        },
+        newWeapon: function () {
+          return { id: this.newId(), type: '', serial: '', ammo: '', ammoQty: '', thermal: { present: 'відсутній', maker: '', model: '', serial: '' }, aim: { type: 'відсутній', serial: '' } };
+        },
+        newRifle: function () {
+          return { id: this.newId(), type: '', qty: '', ammo: '', ammoQty: '' };
+        },
+        newRadio: function () {
+          return { id: this.newId(), model: 'відсутній', qty: '' };
+        },
+        newInternet: function () {
+          return { id: this.newId(), type: 'відсутній', qty: '' };
+        },
+        newPower: function () {
+          return { id: this.newId(), type: '' };
+        },
+        newPerson: function () {
+          return { id: this.newId(), rank: '', pib: '' };
+        },
+        mergeDefaults: function (defaults, saved) {
+          var result = Array.isArray(defaults) ? [] : {};
+          Object.keys(defaults).forEach(function (key) {
+            if (Array.isArray(defaults[key])) {
+              result[key] = Array.isArray(saved[key]) ? saved[key] : defaults[key];
+            } else if (defaults[key] && typeof defaults[key] === 'object') {
+              result[key] = this.mergeDefaults(defaults[key], saved[key] || {});
+            } else {
+              result[key] = saved[key] !== undefined ? saved[key] : defaults[key];
+            }
+          }, this);
+          return result;
+        },
+        repairIds: function () {
+          if (!Array.isArray(this.formData.rifles) || this.formData.rifles.length === 0) {
+            this.formData.rifles = [this.newRifle()];
+          }
+          if (!Array.isArray(this.formData.radios) || this.formData.radios.length === 0) {
+            this.formData.radios = [this.newRadio()];
+          }
+          if (!Array.isArray(this.formData.internet) || this.formData.internet.length === 0) {
+            this.formData.internet = [this.newInternet()];
+          }
+          if (!Array.isArray(this.formData.power) || this.formData.power.length === 0) {
+            this.formData.power = [this.newPower()];
+          }
+          if (!Array.isArray(this.formData.personnel) || this.formData.personnel.length === 0) {
+            this.formData.personnel = [this.newPerson()];
+          }
+          if (this.formData.productsMode === undefined) {
+            this.formData.productsMode = this.formData.productsDate ? 'date' : '';
+          }
+          if (['', 'date', 'ppd'].indexOf(this.formData.productsMode) === -1) {
+            this.formData.productsMode = '';
+          }
+          if (this.formData.productsMode !== 'date') {
+            this.formData.productsDate = '';
+          }
+          ['weapons', 'rifles', 'radios', 'internet', 'power', 'personnel'].forEach(function (list) {
+            (this.formData[list] || []).forEach(function (item) {
+              if (!item.id) item.id = this.newId();
+            }, this);
+          }, this);
+        },
+        range: function (from, to) {
+          var arr = [];
+          for (var i = from; i <= to; i++) arr.push(i);
+          return arr;
+        },
+        normalizeCallSign: function () {
+          var value = this.formData.callSign || '';
+          value = value.replace(/[^а-яА-ЯіІїЇєЄґҐ0-9 \-]/g, '').replace(/\s+/g, ' ');
+          value = value.toLocaleLowerCase('uk-UA');
+          this.formData.callSign = value ? value.charAt(0).toLocaleUpperCase('uk-UA') + value.slice(1) : '';
+        },
+        normalizeSettlement: function () {
+          var value = this.formData.settlement || '';
+          this.formData.settlement = value.replace(/[^а-яА-ЯіІїЇєЄґҐ \-]/g, '').toLocaleUpperCase('uk-UA');
+        },
+        uppercaseField: function (obj, key) {
+          obj[key] = (obj[key] || '').toString().toLocaleUpperCase('uk-UA');
+        },
+        integerField: function (obj, key) {
+          obj[key] = (obj[key] || '').toString().replace(/\D/g, '');
+        },
+        handlePzrkChange: function () {
+          if (this.formData.pzrk.type === 'відсутній') {
+            this.formData.pzrk.serial = '';
+            this.formData.pzrk.zkr = '';
+            this.formData.pzrk.nbzh = '';
+            this.formData.pzrk.mount = '';
+            this.formData.pzrk.thermal = 'ні';
+            this.formData.pzrk.thermalMaker = '';
+            this.formData.pzrk.thermalModel = '';
+            this.formData.pzrk.thermalSerial = '';
+          }
+        },
+        handleAimChange: function (weapon) {
+          if (!weapon.aim || weapon.aim.type === 'відсутній' || weapon.aim.type === 'ел.планшет') {
+            weapon.aim.serial = '';
+          }
+        },
+        addWeapon: function () {
+          if (this.formData.weapons.length < 2) this.formData.weapons.push(this.newWeapon());
+        },
+        removeWeapon: function (index) {
+          this.formData.weapons.splice(index, 1);
+        },
+        addRifle: function () {
+          if (this.formData.rifles.length < 9) this.formData.rifles.push(this.newRifle());
+        },
+        removeRifle: function (index) {
+          if (this.formData.rifles.length > 1) this.formData.rifles.splice(index, 1);
+        },
+        addRadio: function () {
+          if (this.formData.radios.length < 3) this.formData.radios.push(this.newRadio());
+        },
+        removeRadio: function (index) {
+          if (index > 0) this.formData.radios.splice(index, 1);
+        },
+        addInternet: function () {
+          if (this.formData.internet.length < 2) this.formData.internet.push(this.newInternet());
+        },
+        removeInternet: function (index) {
+          if (index > 0) this.formData.internet.splice(index, 1);
+        },
+        addPower: function () {
+          if (this.formData.power.length < 3) this.formData.power.push(this.newPower());
+        },
+        removePower: function (index) {
+          if (index > 0) this.formData.power.splice(index, 1);
+        },
+        addPersonnel: function () {
+          this.formData.personnel.push(this.newPerson());
+        },
+        removePersonnel: function (index) {
+          if (this.formData.personnel.length > 1) this.formData.personnel.splice(index, 1);
+        },
+        syncWeaponAmmo: function (weapon) {
+          weapon.ammo = this.weaponAmmo(weapon.type);
+        },
+        syncRifleAmmo: function (rifle) {
+          rifle.ammo = this.rifleAmmo(rifle.type);
+        },
+        weaponAmmo: function (type) {
+          return this.weaponAmmoMap[type] || '';
+        },
+        rifleAmmo: function (type) {
+          var found = this.smallArmsOptions.find(function (item) { return item.name === type; });
+          return found ? found.ammo : '';
+        },
+        cleanWeaponName: function (name) {
+          return (name || '')
+            .replace(/\s+12\.7$/, '')
+            .replace(/\s+14\.5$/, '')
+            .replace(/\s+20мм\.?$/, '')
+            .replace(/\s+23мм$/, '')
+            .replace(/\s+30мм$/, '')
+            .replace(/\s+35мм$/, '')
+            .replace(/\s+40мм\.?$/, '')
+            .replace(/\s+57мм$/, '');
+        },
+        powerLabel: function (index) {
+          if (index === 0) return 'основне';
+          if (index === 1) return 'резервне';
+          return 'резервне ' + index;
+        },
+        formatDate: function (dateStr) {
+          if (!dateStr) return '';
+          var parts = dateStr.split('-');
+          if (parts.length !== 3) return dateStr;
+          return parts[2] + '.' + parts[1] + '.' + parts[0];
+        },
+        productsLine: function () {
+          if (!this.formData.productsMode) return '';
+          if (this.formData.productsMode === 'ppd') return 'Харчування в ППД';
+          return this.formatDate(this.formData.productsDate);
+        },
+        joinName: function (maker, model) {
+          return [maker, model].filter(Boolean).join(' ') || 'відсутній';
+        },
+        presenceLine: function (value) {
+          return value || 'відсутній';
+        },
+        qtyLine: function (name, qty) {
+          if (!name || name === 'відсутній') return 'відсутній';
+          return name + ' - ' + (qty || '0');
+        },
+        buildReport: function () {
+          if (!this.formData) return '';
+          var f = this.formData;
+          var lines = [];
+
+          lines.push('Дата: ' + this.formatDate(f.date));
+          lines.push('Підрозділ: ' + (f.unit || ''));
+          lines.push('Позивний: ' + this.calculationType + (f.callSign ? ' ' + f.callSign : ''));
+          lines.push('Н.П.: ' + (f.settlement || ''));
+          lines.push('Область: ' + (f.oblast || ''));
+          lines.push('Район: ' + (f.district || ''));
+          lines.push('');
+
+          lines.push('ПЗРК: ' + (f.pzrk.type || 'відсутній'));
+          if (f.pzrk.type !== 'відсутній') {
+            lines.push('Заводський номер: ' + (f.pzrk.serial || ''));
+            lines.push('ЗКР: ' + (f.pzrk.zkr || ''));
+            lines.push('НБЖ: ' + (f.pzrk.nbzh || ''));
+            lines.push('Кріплення для прицілу: ' + (f.pzrk.mount || ''));
+            if (f.pzrk.thermal === 'так') {
+              lines.push('Тепловіз.приціл: ' + this.joinName(f.pzrk.thermalMaker, f.pzrk.thermalModel));
+              lines.push('Заводський номер: ' + (f.pzrk.thermalSerial || ''));
+            } else {
+              lines.push('Тепловіз.приціл: відсутній');
+            }
+          }
+          lines.push('');
+
+          f.weapons.forEach(function (weapon, index) {
+            var n = index + 2;
+            if (!weapon.type) return;
+            lines.push('Зброя' + n + ': ' + this.cleanWeaponName(weapon.type));
+            if (weapon.serial) lines.push('Заводський номер Зброї' + n + ': ' + weapon.serial);
+            lines.push('Набої' + n + ': ' + (weapon.ammo || this.weaponAmmo(weapon.type)) + ' - ' + (weapon.ammoQty || '0'));
+            if (weapon.thermal.present === 'наявний') {
+              lines.push('Тепловіз.приціл до Зброї' + n + ': ' + this.joinName(weapon.thermal.maker, weapon.thermal.model));
+              lines.push('Заводський номер: ' + (weapon.thermal.serial || ''));
+            } else {
+              lines.push('Тепловіз.приціл до Зброї' + n + ': відсутній');
+            }
+            if (weapon.aim.type !== 'відсутній') {
+              lines.push('Засіб.приціл. до Зброї' + n + ': ' + weapon.aim.type);
+              if (weapon.aim.type !== 'ел.планшет') {
+                lines.push('Заводський номер: ' + (weapon.aim.serial || ''));
+              }
+            } else {
+              lines.push('Засіб.приціл. до Зброї' + n + ': відсутній');
+            }
+            lines.push('');
+          }, this);
+
+          f.rifles.forEach(function (rifle, index) {
+            var n = index + 1;
+            if (!rifle.type) return;
+            lines.push('Стрілецька зброя' + n + ': ' + rifle.type + ' - ' + (rifle.qty || '0'));
+            lines.push('Набої до стр.зброї' + n + ': ' + (rifle.ammo || this.rifleAmmo(rifle.type)) + ' - ' + (rifle.ammoQty || '0'));
+            lines.push('');
+          }, this);
+
+          if (f.handThermal.present === 'наявний') {
+            lines.push('Тепловізор ручний: ' + this.joinName(f.handThermal.maker, f.handThermal.model));
+            lines.push('Заводський номер: ' + (f.handThermal.serial || ''));
+          } else {
+            lines.push('Тепловізор ручний: відсутній');
+          }
+          lines.push('');
+
+          lines.push('Прилад нічного бачення: ' + f.nvg);
+          lines.push('Бінокль: ' + f.binocular);
+          lines.push('Прожектор: ' + f.spotlight);
+          lines.push('Лазерний вказівник: ' + f.laser);
+          lines.push('');
+
+          f.radios.forEach(function (radio, index) {
+            lines.push('Радіостанція' + (index + 1) + ': ' + this.qtyLine(radio.model, radio.qty));
+          }, this);
+          lines.push('');
+
+          lines.push('Смартфон робочий використовується НЕ для Віража: ' + this.presenceLine(f.smartphoneNoVirazh));
+          lines.push('Смартфон робочий використовується ДЛЯ Віража: ' + this.presenceLine(f.smartphoneVirazh));
+          lines.push('');
+          lines.push('Електронний планшет використовується НЕ для Віража чи наведення: ' + this.presenceLine(f.tabletNoVirazh));
+          lines.push('Електронний планшет використовується ДЛЯ Віража: ' + this.presenceLine(f.tabletVirazh));
+          lines.push('');
+          lines.push('Засіб відеофіксації (Go-PRO): ' + this.presenceLine(f.gopro));
+          lines.push('');
+
+          f.internet.forEach(function (net, index) {
+            lines.push('Інтернет на позиції' + (index + 1) + ': ' + this.qtyLine(net.type, net.qty));
+          }, this);
+          lines.push('');
+
+          f.power.forEach(function (power, index) {
+            lines.push('Ел.Живлення ' + this.powerLabel(index) + ': ' + (power.type || ''));
+          }, this);
+          lines.push('');
+
+          lines.push('Авто: ' + (f.vehicle.brand || ''));
+          lines.push('Приналежність: ' + (f.vehicle.affiliation || ''));
+          lines.push('Номерний знак: ' + (f.vehicle.plate || ''));
+          lines.push('');
+
+          lines.push('Продукти отримано: ' + this.productsLine());
+          var people = f.personnel
+            .filter(function (p) { return p.rank || p.pib; })
+            .map(function (p) { return [p.rank, p.pib].filter(Boolean).join(' '); })
+            .join(', ');
+          lines.push('Особовий склад: ' + people);
+          lines.push('Потреба в забезпечені: ' + (f.needs || ''));
+
+          return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        },
+        copyData: function () {
+          var text = this.buildReport();
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function () {
+              alert('Доповідь скопійовано');
+            }).catch(function () {
+              this.fallbackCopy(text);
+            }.bind(this));
+          } else {
+            this.fallbackCopy(text);
+          }
+        },
+        fallbackCopy: function (text) {
+          var textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'absolute';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            alert('Доповідь скопійовано');
+          } catch (e) {
+            alert('Не вдалося скопіювати. Скопіюйте текст вручну.');
+          }
+          document.body.removeChild(textarea);
+        },
+        clearForm: function () {
+          this.formData = this.emptyForm();
+          localStorage.removeItem(this.storageKey);
+        }
+      }
+    });
+
+    } catch (e) { console.error('Не вдалося запустити форму "Стан та положення":', e); }
+  </script>
+</body>
+</html>
+<!-- created by Yaroslav (Ringleader7); об'єднано в один файл та доповнено темами -->
